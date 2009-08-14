@@ -44,9 +44,9 @@ class xCSS
 		$this->globalparts = array();
 		$this->xCSSvars = array();
 		
-		$this->path_css_dir = (@$cfg['path_to_css_dir']) ? $cfg['path_to_css_dir'] : '../';
+		$this->path_css_dir = isset($cfg['path_to_css_dir']) ? $cfg['path_to_css_dir'] : '../';
 		
-		if(@$cfg['xCSS_files'])
+		if(isset($cfg['xCSS_files']))
 		{
 			$this->xCSSfiles = array();
 			$this->cssfile = array();
@@ -60,22 +60,27 @@ class xCSS
 		}
 		else
 		{
-			$this->xCSSfiles = array('xCSS.xCSS');
+			$this->xCSSfiles = array('xCSS.xcss');
 			$this->cssfile = array('xCSS_generated.css');
 		}
 		
 		// CSS master file
-		if(@$cfg['master_file'])
+		if(isset($cfg['master_file']) && $cfg['master_file'] === TRUE)
 		{
-			$this->mastercssfile = (@$cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
-			$this->creatMasterFile(@$cfg['reset_files'], @$cfg['xCSS_files'], @$cfg['hook_files']);
+			$this->mastercssfile = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
+			
+			$reset = isset($cfg['reset_files']) ? $cfg['reset_files'] : null;
+			$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : null;
+			$hook = isset($cfg['hook_files']) ? $cfg['hook_files'] : null;
+			
+			$this->creatMasterFile($reset, $xcssf, $hook);
 		}
 		
-		$this->construct = (@$cfg['construct_name']) ? $cfg['construct_name'] : 'self';
+		$this->construct = isset($cfg['construct_name']) ? $cfg['construct_name'] : 'self';
 		
-		$this->compress = (bool) @$cfg['compress'];
+		$this->compress = isset($cfg['compress']) ? true : true;
 		
-		$this->debugmode = (bool) @$cfg['debugmode'];
+		$this->debugmode = isset($cfg['debugmode']) ? true : true;
 		
 		// this is needed to be able to extend selectors across mulitple xCSS files
 		$this->xCSSfiles = array_reverse($this->xCSSfiles);
@@ -102,7 +107,7 @@ class xCSS
 		foreach($files as $file)
 		{
 			$file = explode(':', $file);
-			$props = (@$file[1]) ? ' '.trim($file[1]) : '';
+			$props = isset($file[1]) ? ' '.trim($file[1]) : '';
 			$masterFileCont .= '@import url("'.trim($file[0]).'")'.$props.';'."\n";
 		}
 		
@@ -164,18 +169,21 @@ class xCSS
 
 		foreach($this->filecont as $i => $part)
 		{
-			@list($keystr, $codestr) = explode("{[", $part);
-			$keystr = trim($keystr);
-			// adding new line to all (,) in selectors, to be able to find them for 'extends' later
-			$keystr = preg_replace("/(,)((\w|\s)+)?\b/", ",\n$2", $keystr);
-			if($keystr == 'vars')
+			if( ! empty($part))
 			{
-				$this->setupVars($codestr);
-				unset($this->filecont[$i]);
-			}
-			elseif($keystr != '')
-			{
-				$this->parts[$keystr] = $codestr;
+				list($keystr, $codestr) = explode("{[", $part);
+				$keystr = trim($keystr);
+				// adding new line to all (,) in selectors, to be able to find them for 'extends' later
+				$keystr = preg_replace("/(,)((\w|\s)+)?\b/", ",\n$2", $keystr);
+				if($keystr == 'vars')
+				{
+					$this->setupVars($codestr);
+					unset($this->filecont[$i]);
+				}
+				elseif($keystr != '')
+				{
+					$this->parts[$keystr] = $codestr;
+				}
 			}
 		}
 	}
@@ -188,12 +196,15 @@ class xCSS
 				foreach($codes as $code)
 				{
 					$code = trim($code);
-					@list($varkey, $varcode) = explode("=", $code);
-					$varkey = trim($varkey);
-					$varcode = trim($varcode);
-					if(strlen($varkey) > 0)
+					if( ! empty($code))
 					{
-						$this->xCSSvars[$varkey] = $varcode;
+						list($varkey, $varcode) = explode("=", $code);
+						$varkey = trim($varkey);
+						$varcode = trim($varcode);
+						if(strlen($varkey) > 0)
+						{
+							$this->xCSSvars[$varkey] = $varcode;
+						}
 					}
 				}
 			}
@@ -221,7 +232,7 @@ class xCSS
 	{
 		foreach($this->globalparts as $keystr => $codestr)
 		{
-			if(eregi("extends", $keystr))
+			if(strpos($keystr, 'extends') !== FALSE)
 			{
 				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
 				
@@ -239,7 +250,7 @@ class xCSS
 		
 		foreach($this->parts as $keystr => $codestr)
 		{
-			if(eregi("extends", $keystr))
+			if(strpos($keystr, 'extends') !== FALSE)
 			{
 				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
 				if(count($result[3]) > 1)
@@ -255,7 +266,7 @@ class xCSS
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
 				
-				if(eregi("&", $parent))
+				if(strpos($parent, '&') !== FALSE)
 				{
 					$this->manageMultipleExtends($child, $parent, $codestr);
 					$this->parseExtends();
@@ -307,7 +318,7 @@ class xCSS
 							$sep_keys = explode(",\n", $keystr);
 							foreach ($sep_keys as $s_key)
 							{
-								if(eregi($parent, $s_key) && $parent != $s_key)
+								if(strpos($s_key, $parent) !== FALSE && $parent != $s_key)
 								{
 									$childextra = str_replace($parent, '', $s_key);
 									if(substr($childextra, 0, 1) == ' ')
@@ -348,7 +359,7 @@ class xCSS
 		$still_childs_left = false;
 		foreach($this->parts as $keystr => $codestr)
 		{
-			if(ereg("\{", $codestr))
+			if(strpos($codestr, '{') !== FALSE)
 			{
 				$keystr = trim($keystr);
 				unset($this->parts[$keystr]);
@@ -370,21 +381,28 @@ class xCSS
 			$c_parts = explode(']}', $codestr);
 			foreach ($c_parts as $c_part)
 			{
-				@list($c_keystr, $c_codestr) = explode('{[', $c_part);
-				$c_keystr = trim($c_keystr);
-				if($c_keystr != '')
+				$c_part = trim($c_part);
+				if( ! empty($c_part))
 				{
-					$sep_keys = explode(",\n", $keystr);
-					$betterKey = '';
-					foreach ($sep_keys as $s_key)
+					list($c_keystr, $c_codestr) = explode('{[', $c_part);
+					$c_keystr = trim($c_keystr);
+
+					if($c_keystr != '')
 					{
-						$betterKey .= $s_key.' '.$c_keystr.",\n";
+						$sep_keys = explode(",\n", $keystr);
+						$betterKey = '';
+
+						foreach ($sep_keys as $s_key)
+						{
+							$betterKey .= $s_key.' '.$c_keystr.",\n";
+						}
+
+						if(strpos($betterKey, $this->construct) !== FALSE)
+						{
+							$betterKey = str_replace(' '.$this->construct, '', $betterKey);
+						}
+						$this->parts[substr($betterKey,0,-2)] = $c_codestr;
 					}
-					if(eregi($this->construct, $betterKey))
-					{
-						$betterKey = str_replace(' '.$this->construct, '', $betterKey);
-					}
-					$this->parts[substr($betterKey,0,-2)] = $c_codestr;
 				}
 			}
 		}
@@ -475,10 +493,13 @@ class xCSS
 					foreach($codes as $code)
 					{
 						$code = trim($code);
-						@list($codekeystr, $codevalue) = explode(":", $code);
-						if(strlen($codekeystr) > 0)
+						if( ! empty($code))
 						{
-							$this->css[$keystr][trim($codekeystr)] = trim($codevalue);
+							list($codekeystr, $codevalue) = explode(":", $code);
+							if(strlen($codekeystr) > 0)
+							{
+								$this->css[$keystr][trim($codekeystr)] = trim($codevalue);
+							}
 						}
 					}
 				}
@@ -525,9 +546,20 @@ class xCSS
 			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), '', $content);
 		}
 		
-		if( ! @file_put_contents($this->path_css_dir.$filename, pack("CCC",0xef,0xbb,0xbf).$content))
+		$filepath = $this->path_css_dir.$filename;
+		$filepath_dirs_arr = explode('/', $filepath);
+		$filepath_dirs = null;
+		
+		for($i = 0; $i < (count($filepath_dirs_arr)-1); $i++)
+		{
+			$filepath_dirs .= $filepath_dirs_arr[$i].'/';
+		}
+		
+		if( ! is_dir($filepath_dirs))
 		{
 			die("alert(\"No such directory '".$filename."'\");");
 		}
+		
+		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).$content);
 	}
 }
