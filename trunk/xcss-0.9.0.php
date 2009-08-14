@@ -4,9 +4,9 @@
  *
  * @author     Anton Pawlik
  * @version    0.9.0
- * @see        http://xcss.antpaw.de/docs/
+ * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
- * @license    http://xcss.antpaw.de/about/
+ * @license    http://xcss.antpaw.org/about/
  */
 
 class xCSS

@@ -3,9 +3,9 @@
  * xCSS index file
  *
  * @author     Anton Pawlik
- * @see        http://xcss.antpaw.de/docs/
+ * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
- * @license    http://xcss.antpaw.de/about/
+ * @license    http://xcss.antpaw.org/about/
  */
 
 define('XCSSCLASS', 'xcss-0.9.0.php');
