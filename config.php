@@ -7,11 +7,8 @@ $config['path_to_css_dir'] = '../';			//	default: '../'
 
 $config['xCSS_files'] = array
 (
-	'modules.xcss'	=> 'generated/modules.css',
-	'main.xcss'	=> 'generated/main.css',
-	'test.xcss'	=> 'generated/test.css',
-	'_rules_test.xcss'		=> 'generated/_rules_test.css',
-	'_main.xcss'			=> 'generated/_main.css',
+//	'source/modules.xcss'		=> 'generated/modules.css',
+//	'source/main.xcss'			=> 'generated/main.css',
 );
 
 $config['master_file'] = true;				//	default: 'true'
@@ -31,4 +28,4 @@ $config['construct_name'] = 'self';			//	default: 'self'
 
 $config['compress'] = false;				//	default: 'false'
 
-$config['debugmode'] = true;				//	default: 'false'
+$config['debugmode'] = false;				//	default: 'false'
