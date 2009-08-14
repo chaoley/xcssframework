@@ -2,11 +2,11 @@
 /**
  * xCSS class
  *
- * @author		Anton Pawlik
- * @version		0.1.2
- * @see			http://xcss.antpaw.de/docs/
- * @copyright	(c) 2009 Anton Pawlik
- * @license		http://xcss.antpaw.de/about/
+ * @author			Anton Pawlik
+ * @version			0.1.2
+ * @see				http://xcss.antpaw.de/docs/
+ * @copyright		(c) 2009 Anton Pawlik
+ * @license			http://xcss.antpaw.de/about/
  */
 
 class xCSS
