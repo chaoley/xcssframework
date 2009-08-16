@@ -27,11 +27,14 @@ class xCSS
 	// an array of keys(selectors) and values(propertys)
 	$parts,
 	
-	// final css nodes as an array
-	$css,
+	// nodes that will be extended some level later
+	$levelparts,
 	
 	// nodes that will be extended across xCSS files
-	$levelparts,
+	$globalparts,
+
+	// final css nodes as an array
+	$css,
 	
 	// vars declared in xCSS files
 	$xCSSvars,
@@ -134,9 +137,13 @@ class xCSS
 					if(count($this->parts) > 0)
 					{
 						$this->parseLevel();
-						$this->parseLevel();
-					
+						
 						$this->manageOrder();
+						
+						if( ! empty($this->levelparts))
+						{
+							$this->manageGlobalExtends();
+						}
 						
 						$this->finalParse($this->cssfile[$i]);
 					}
@@ -153,6 +160,32 @@ class xCSS
 			foreach($this->finalFile as $fname => $fcont)
 			{
 				$this->creatFile($this->useVars($fcont), $fname);
+			}
+		}
+	}
+	
+	private function manageGlobalExtends()
+	{
+		foreach($this->levelparts as $keystr => $codestr)
+		{
+			if(strpos($keystr, 'extends') !== FALSE)
+			{
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+
+				$child = trim($result[1][0]);
+				$parent = trim($result[3][0]);
+				
+				foreach($this->parts as $p_keystr => $p_codestr)
+				{
+					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.",") !== FALSE))
+					{
+						$p_keys = explode(",\n", $p_keystr);
+						foreach($p_keys as $p_key)
+						{
+							$this->levelparts[$p_key." extends ".$parent] = '';
+						}
+					}
+				}
 			}
 		}
 	}
@@ -223,9 +256,6 @@ class xCSS
 	
 	private function parseLevel()
 	{
-		// this will manage xCSS rule: 'extends &'
-		$this->manageMultipleExtends();
-		
 		// this will manage xCSS rule: 'extends'
 		$this->parseExtends();
 
@@ -293,6 +323,9 @@ class xCSS
 	
 	private function parseExtends()
 	{
+		// this will manage xCSS rule: 'extends &'
+		$this->manageMultipleExtends();
+		
 		foreach($this->levelparts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
