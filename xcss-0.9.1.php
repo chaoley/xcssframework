@@ -133,7 +133,7 @@ class xCSS
 				if(strlen($this->filecont)>1)
 				{
 					$this->startSplitCont();
-
+					
 					if(count($this->parts) > 0)
 					{
 						$this->parseLevel();
@@ -160,32 +160,6 @@ class xCSS
 			foreach($this->finalFile as $fname => $fcont)
 			{
 				$this->creatFile($this->useVars($fcont), $fname);
-			}
-		}
-	}
-	
-	private function manageGlobalExtends()
-	{
-		foreach($this->levelparts as $keystr => $codestr)
-		{
-			if(strpos($keystr, 'extends') !== FALSE)
-			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
-
-				$child = trim($result[1][0]);
-				$parent = trim($result[3][0]);
-				
-				foreach($this->parts as $p_keystr => $p_codestr)
-				{
-					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.",") !== FALSE))
-					{
-						$p_keys = explode(",\n", $p_keystr);
-						foreach($p_keys as $p_key)
-						{
-							$this->levelparts[$p_key." extends ".$parent] = '';
-						}
-					}
-				}
 			}
 		}
 	}
@@ -263,10 +237,41 @@ class xCSS
 		$this->parseChilds();
 	}
 	
+	
+	private function manageGlobalExtends()
+	{
+		// helps to find all the extenders of the global extended selector
+		
+		foreach($this->levelparts as $keystr => $codestr)
+		{
+			if(strpos($keystr, 'extends') !== FALSE)
+			{
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				
+				$child = trim($result[1][0]);
+				$parent = trim($result[3][0]);
+				
+				foreach($this->parts as $p_keystr => $p_codestr)
+				{
+					// to be sure we get all the children we need to find the parent selector
+					// this must be the one that has no , after his name
+					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.",") !== FALSE))
+					{
+						$p_keys = explode(",\n", $p_keystr);
+						foreach($p_keys as $p_key)
+						{
+							$this->levelparts[$p_key." extends ".$parent] = '';
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	private function manageMultipleExtends()
 	{
 		//	To be able to manage multiple extends, you need to
-		//	destroy the actuall node and creat many nodes that have
+		//	destroy the actual node and creat many nodes that have
 		//	mono extend. the first one gets all the css rules
 		foreach($this->parts as $keystr => $codestr)
 		{
@@ -332,8 +337,8 @@ class xCSS
 			{
 				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
 				
-				$parent = trim($result[3][0]); 	// parent class
-				$child = trim($result[1][0]); 	// child class
+				$parent = trim($result[3][0]);
+				$child = trim($result[1][0]);
 				
 				// true means that the parent node was in the same file
 				if($this->searchForParent($child, $parent))
