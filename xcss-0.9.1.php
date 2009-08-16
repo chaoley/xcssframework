@@ -29,9 +29,6 @@ class xCSS
 	
 	// nodes that will be extended some level later
 	$levelparts,
-	
-	// nodes that will be extended across xCSS files
-	$globalparts,
 
 	// final css nodes as an array
 	$css,
