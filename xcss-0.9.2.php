@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.1
+ * @version    0.9.2
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -125,7 +125,7 @@ class xCSS
 			$filename = $this->path_css_dir.$this->xCSSfiles[$i];
 			if(file_exists($filename))
 			{
-				$this->filecont = file_get_contents($filename);
+				$this->filecont = str_replace('ï»¿', '', utf8_encode(file_get_contents($filename)));
 				
 				if(strlen($this->filecont)>1)
 				{
@@ -166,12 +166,13 @@ class xCSS
 		// removes multiple line comments
 		$this->filecont = preg_replace("/\/\*(.*)?\*\//Usi", "", $this->filecont);
 		// removes inline comments, but not :// for http://
+		$this->filecont .= "\n";
 		$this->filecont = preg_replace("/[^:]\/\/.+?\n/", "", $this->filecont);
 		
 		$this->filecont = $this->changeBraces($this->filecont);
 		
-		$this->filecont = explode("]}",$this->filecont);
-
+		$this->filecont = explode("]}", $this->filecont);
+		
 		foreach($this->filecont as $i => $part)
 		{
 			$part = trim($part);
@@ -186,7 +187,7 @@ class xCSS
 					$this->setupVars($codestr);
 					unset($this->filecont[$i]);
 				}
-				elseif($keystr != '')
+				else if($keystr != '')
 				{
 					$this->parts[$keystr] = $codestr;
 				}
@@ -631,6 +632,6 @@ class xCSS
 			die("alert(\"No such directory '".$filename."'\");");
 		}
 		
-		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).$content);
+		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
 	}
 }
