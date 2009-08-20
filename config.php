@@ -1,4 +1,4 @@
-<?php defined('XCSSCONFIG') OR die('No direct access allowed.');
+<?php 
 /**
  * xCSS config
  */
