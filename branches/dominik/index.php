@@ -3,17 +3,14 @@
  * xCSS index file
  *
  * @author     Anton Pawlik
+ * @author     Dominik Bonsch <dominik.bonsch@webfrap.de>
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
  */
 
-define('XCSSCLASS', 'xcss-0.9.2.php');
-file_exists(XCSSCLASS) ? include XCSSCLASS : die('alert("Can\'t find the xCSS class file: \''.XCSSCLASS.'\'"!);');
+include 'Xcss.php';
+include 'config.php';
 
-define('XCSSCONFIG', 'config.php');
-file_exists(XCSSCONFIG) ? include XCSSCONFIG : die('alert("Can\'t find the xCSS config file: \''.XCSSCONFIG.'\'"!);');
-
-$xCSS = new xCSS($config);
-
+$xCSS = new Xcss($config);
 $xCSS->compile();

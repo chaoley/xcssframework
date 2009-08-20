@@ -1,44 +1,103 @@
-<?php defined('XCSSCLASS') OR die('No direct access allowed.');
+<?php 
 /**
  * xCSS class
  *
  * @author     Anton Pawlik
+ * @author     Dominik Bonsch <dominik.bonsch@webfrap.de>
  * @version    0.9.2
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
  */
 
-class xCSS
-{
-	private
-	// config vars
-	$path_css_dir,
-	$mastercssfile,
-	$xCSSfile,
-	$cssfile,
-	$construct,
-	$compress,
-	$debugmode,
+class Xcss
+{	
+////////////////////////////////////////////////////////////////////////////////
+// Attributes
+////////////////////////////////////////////////////////////////////////////////
+  
+	/**
+	 * @var $path_css_dir
+	 */
+	private $path_css_dir;
 	
-	// hole content of the xCSS file
-	$filecont,
+  /**
+   * @var $mastercssfile
+   */
+	private $mastercssfile;
 	
-	// an array of keys(selectors) and values(propertys)
-	$parts,
+  /**
+   * @var $xCSSfile
+   */
+	private $xCSSfile;
 	
-	// nodes that will be extended some level later
-	$levelparts,
+  /**
+   * @var $cssfile
+   */
+	private $cssfile;
+	
+  /**
+   * @var $construct
+   */
+	private $construct;
+	
+  /**
+   * @var $compress
+   */
+	private $compress;
+	
+  /**
+   * @var $debugmode
+   */
+	private $debugmode;
+
+  /**
+   * hole content of the xCSS file
+   * @var $filecont
+   */
+	private $filecont;
+	
+  /**
+   * an array of keys(selectors) and values(propertys)
+   * @var $parts
+   */
+	private $parts;
+	
+  /**
+   * nodes that will be extended some level later
+   * @var $levelparts
+   */
+	private $levelparts;
 
 	// final css nodes as an array
-	$css,
+  /**
+   * nodes that will be extended some level later
+   * @var $css
+   */
+	private $css;
 	
 	// vars declared in xCSS files
-	$xCSSvars,
+  /**
+   * nodes that will be extended some level later
+   * @var $xCSSvars
+   */
+	private $xCSSvars;
 	
 	// output string for each CSS file
-	$finalFile;
+  /**
+   * nodes that will be extended some level later
+   * @var $finalFile
+   */
+	private $finalFile;
 	
+////////////////////////////////////////////////////////////////////////////////
+// Constructor
+////////////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * 
+	 * @param array $cfg
+	 */
 	public function __construct(array $cfg)
 	{
 		$this->levelparts = array();
@@ -87,6 +146,67 @@ class xCSS
 		$this->cssfile = array_reverse($this->cssfile);
 	}
 	
+////////////////////////////////////////////////////////////////////////////////
+// Public Interface Methodes
+////////////////////////////////////////////////////////////////////////////////
+	
+  public function compile()
+  {
+    for($i=0; $i < count($this->xCSSfiles); $i++)
+    {
+      $this->parts = null;
+      $this->filecont = null;
+      $this->css = null;
+      
+      $filename = $this->path_css_dir.$this->xCSSfiles[$i];
+      if(file_exists($filename))
+      {
+        $this->filecont = str_replace('ï»¿', '', utf8_encode(file_get_contents($filename)));
+        
+        if(strlen($this->filecont)>1)
+        {
+          $this->startSplitCont();
+          
+          if(count($this->parts) > 0)
+          {
+            $this->parseLevel();
+            
+            $this->manageOrder();
+            
+            if( ! empty($this->levelparts))
+            {
+              $this->manageGlobalExtends();
+            }
+            
+            $this->finalParse($this->cssfile[$i]);
+          }
+        }
+      }
+      else
+      {
+        die("alert(\"Can't find '".$filename."'\");");
+      }
+    }
+    
+    if( ! empty($this->finalFile))
+    {
+      foreach($this->finalFile as $fname => $fcont)
+      {
+        $this->creatFile($this->useVars($fcont), $fname);
+      }
+    }
+  }
+	
+////////////////////////////////////////////////////////////////////////////////
+// Private internal Methodes
+////////////////////////////////////////////////////////////////////////////////
+	
+  /**
+   * @param array $reset
+   * @param array $main
+   * @param array $hook
+   * @return void
+   */
 	private function creatMasterFile(array $reset = array(), array $main = array(), array $hook = array())
 	{
 		$files = array();
@@ -112,55 +232,13 @@ class xCSS
 		}
 		
 		$this->creatFile($masterFileCont, $this->mastercssfile);
-	}
+	}//end private function creatMasterFile */
 	
-	public function compile()
-	{
-		for($i=0; $i < count($this->xCSSfiles); $i++)
-		{
-			$this->parts = null;
-			$this->filecont = null;
-			$this->css = null;
-			
-			$filename = $this->path_css_dir.$this->xCSSfiles[$i];
-			if(file_exists($filename))
-			{
-				$this->filecont = str_replace('ï»¿', '', utf8_encode(file_get_contents($filename)));
-				
-				if(strlen($this->filecont)>1)
-				{
-					$this->startSplitCont();
-					
-					if(count($this->parts) > 0)
-					{
-						$this->parseLevel();
-						
-						$this->manageOrder();
-						
-						if( ! empty($this->levelparts))
-						{
-							$this->manageGlobalExtends();
-						}
-						
-						$this->finalParse($this->cssfile[$i]);
-					}
-				}
-			}
-			else
-			{
-				die("alert(\"Can't find '".$filename."'\");");
-			}
-		}
-		
-		if( ! empty($this->finalFile))
-		{
-			foreach($this->finalFile as $fname => $fcont)
-			{
-				$this->creatFile($this->useVars($fcont), $fname);
-			}
-		}
-	}
-	
+
+	/**
+	 * 
+	 * @return void
+	 */
 	private function startSplitCont()
 	{
 		// removes multiple line comments
@@ -193,39 +271,44 @@ class xCSS
 				}
 			}
 		}
-	}
+		
+	}//end private function startSplitCont */
 	
-		private function setupVars($codestr)
+	/**
+	 * 
+	 *
+	 */
+	private function setupVars($codestr)
+	{
+		$codes = explode(";", $codestr);
+		if(count($codes) > 0)
 		{
-			$codes = explode(";", $codestr);
-			if(count($codes) > 0)
+			foreach($codes as $code)
 			{
-				foreach($codes as $code)
+				$code = trim($code);
+				if( ! empty($code))
 				{
-					$code = trim($code);
-					if( ! empty($code))
+					list($varkey, $varcode) = explode("=", $code);
+					$varkey = trim($varkey);
+					$varcode = trim($varcode);
+					if(strlen($varkey) > 0)
 					{
-						list($varkey, $varcode) = explode("=", $code);
-						$varkey = trim($varkey);
-						$varcode = trim($varcode);
-						if(strlen($varkey) > 0)
-						{
-							$this->xCSSvars[$varkey] = $varcode;
-						}
+						$this->xCSSvars[$varkey] = $varcode;
 					}
 				}
 			}
 		}
-		
-		private function useVars($cont)
-		{
-			foreach($this->xCSSvars as $varkey => $varcode)
-			{
-				$cont = str_replace($varkey, $varcode, $cont);
-			}
-			return $cont;
-		}
+	}//end private function setupVars */
 	
+	private function useVars($cont)
+	{
+		foreach($this->xCSSvars as $varkey => $varcode)
+		{
+			$cont = str_replace($varkey, $varcode, $cont);
+		}
+		return $cont;
+	}//end private function useVars */
+
 	private function parseLevel()
 	{
 		// this will manage xCSS rule: 'extends'
@@ -233,7 +316,7 @@ class xCSS
 
 		// this will manage xCSS rule: child objects inside of a node
 		$this->parseChilds();
-	}
+	}//end private function parseLevel */
 	
 	
 	private function manageGlobalExtends()
@@ -264,8 +347,12 @@ class xCSS
 				}
 			}
 		}
-	}
+	}//end private function manageGlobalExtends */
 	
+	/**
+	 *  
+	 *
+	 */
 	private function manageMultipleExtends()
 	{
 		//	To be able to manage multiple extends, you need to
@@ -297,33 +384,41 @@ class xCSS
 				}
 			}
 		}
-	}
+	}//end private function manageMultipleExtends */
 	
-		private function addNodeAtOrder($kill_this, $with_this_key, $and_this_value, $additional_key = array())
+	/**
+	 * 
+	 *
+	 */
+	private function addNodeAtOrder($kill_this, $with_this_key, $and_this_value, $additional_key = array())
+	{
+		foreach($this->parts as $keystr => $codestr)
 		{
-			foreach($this->parts as $keystr => $codestr)
+			if($keystr == $kill_this)
 			{
-				if($keystr == $kill_this)
+				$temp[$with_this_key] = $and_this_value;
+				
+				if( ! empty($additional_key))
 				{
-					$temp[$with_this_key] = $and_this_value;
-					
-					if( ! empty($additional_key))
+					foreach($additional_key as $empty_key)
 					{
-						foreach($additional_key as $empty_key)
-						{
-							$temp[$empty_key] = '';
-						}
+						$temp[$empty_key] = '';
 					}
 				}
-				else
-				{
-					$temp[$keystr] = $codestr;
-				}
 			}
-			
-			return $temp;
+			else
+			{
+				$temp[$keystr] = $codestr;
+			}
 		}
+		
+		return $temp;
+	}//end private function addNodeAtOrder */
 	
+	/**
+	 *  
+	 *
+	 */
 	private function parseExtends()
 	{
 		// this will manage xCSS rule: 'extends &'
@@ -388,44 +483,52 @@ class xCSS
 				}
 			}
 		}
-	}
+	}//end private function parseExtends */
 	
-		private function searchForParent($child, $parent)
+	/**
+	 *  
+	 *
+	 */
+	private function searchForParent($child, $parent)
+	{
+		$parent_found = false;
+		foreach ($this->parts as $keystr => $codestr)
 		{
-			$parent_found = false;
-			foreach ($this->parts as $keystr => $codestr)
+			$sep_keys = explode(",\n", $keystr);
+			foreach ($sep_keys as $s_key)
 			{
-				$sep_keys = explode(",\n", $keystr);
-				foreach ($sep_keys as $s_key)
+				if($parent == $s_key)
 				{
-					if($parent == $s_key)
+					$this->parts = $this->addNodeAtOrder($keystr, $child.",\n".$keystr, $codestr);
+					// ever since now the code doesn't make any sens but it works
+					// finds all the parent selectors with another bind selectors behind
+					foreach ($this->parts as $keystr => $codestr)
 					{
-						$this->parts = $this->addNodeAtOrder($keystr, $child.",\n".$keystr, $codestr);
-						// ever since now the code doesn't make any sens but it works
-						// finds all the parent selectors with another bind selectors behind
-						foreach ($this->parts as $keystr => $codestr)
+						$sep_keys = explode(",\n", $keystr);
+						foreach ($sep_keys as $s_key)
 						{
-							$sep_keys = explode(",\n", $keystr);
-							foreach ($sep_keys as $s_key)
+							if(strpos($s_key, $parent) !== FALSE && $parent != $s_key)
 							{
-								if(strpos($s_key, $parent) !== FALSE && $parent != $s_key)
+								$childextra = str_replace($parent, '', $s_key);
+								if(substr($childextra, 0, 1) == ' ')
 								{
-									$childextra = str_replace($parent, '', $s_key);
-									if(substr($childextra, 0, 1) == ' ')
-									{
-										// get rid off not extended parent node
-										$this->parts = $this->addNodeAtOrder($keystr, $child.$childextra.",\n".$keystr, $codestr);
-									}
+									// get rid off not extended parent node
+									$this->parts = $this->addNodeAtOrder($keystr, $child.$childextra.",\n".$keystr, $codestr);
 								}
 							}
 						}
-						$parent_found = true;
 					}
+					$parent_found = true;
 				}
 			}
-			return $parent_found;
 		}
+		return $parent_found;
+	}//end private function searchForParent */
 	
+  /**
+   *  
+   *
+   */
 	private function parseChilds()
 	{
 		$still_childs_left = false;
@@ -444,87 +547,99 @@ class xCSS
 		{
 			$this->parseLevel();
 		}
-	}
+	}//end private function parseChilds */
 	
-		private function manageChildren($keystr, $codestr)
-		{
-			$codestr = $this->changeBraces($codestr);
-			
-			$c_parts = explode(']}', $codestr);
-			foreach ($c_parts as $c_part)
-			{
-				$c_part = trim($c_part);
-				if( ! empty($c_part))
-				{
-					list($c_keystr, $c_codestr) = explode('{[', $c_part);
-					$c_keystr = trim($c_keystr);
-
-					if($c_keystr != '')
-					{
-						$sep_keys = explode(",\n", $keystr);
-						$betterKey = '';
-
-						foreach ($sep_keys as $s_key)
-						{
-							$betterKey .= $s_key.' '.$c_keystr.",\n";
-						}
-
-						if(strpos($betterKey, $this->construct) !== FALSE)
-						{
-							$betterKey = str_replace(' '.$this->construct, '', $betterKey);
-						}
-						$this->parts[substr($betterKey,0,-2)] = $c_codestr;
-					}
-				}
-			}
-		}
+  /**
+   *  
+   *
+   */
+	private function manageChildren($keystr, $codestr)
+	{
+		$codestr = $this->changeBraces($codestr);
 		
-		private function changeBraces($str)
+		$c_parts = explode(']}', $codestr);
+		foreach ($c_parts as $c_part)
 		{
-			/*
-				This function was writen by Gumbo
-				http://www.tutorials.de/forum/members/gumbo.html
-				Thank you very much!
-				
-				finds the very outer braces and changes them to {[ code ]}
-			*/
-			$buffer = '';
-			$depth = 0;
-			for ($i=0; $i < strlen($str); $i++)
+			$c_part = trim($c_part);
+			if( ! empty($c_part))
 			{
-				$char = $str[$i];
-				switch ($char)
+				list($c_keystr, $c_codestr) = explode('{[', $c_part);
+				$c_keystr = trim($c_keystr);
+
+				if($c_keystr != '')
 				{
-					case '{':
-						$depth++;
-						if ($depth === 1)
-						{
-							$buffer .= '{[';
-						}
-						else
-						{
-							$buffer .= $char;
-						}
-						break;
-					case '}':
-						$depth--;
-						if ($depth === 0)
-						{
-							$buffer .= ']}';
-							continue;
-						}
-						else
-						{
-							$buffer .= $char;
-						}
-						break;
-					default:
-						$buffer .= $char;
+					$sep_keys = explode(",\n", $keystr);
+					$betterKey = '';
+
+					foreach ($sep_keys as $s_key)
+					{
+						$betterKey .= $s_key.' '.$c_keystr.",\n";
+					}
+
+					if(strpos($betterKey, $this->construct) !== FALSE)
+					{
+						$betterKey = str_replace(' '.$this->construct, '', $betterKey);
+					}
+					$this->parts[substr($betterKey,0,-2)] = $c_codestr;
 				}
 			}
-			return $buffer;
 		}
+	}//end private function manageChildren */
 	
+  /**
+   *  
+   *
+   */
+	private function changeBraces($str)
+	{
+		/*
+			This function was writen by Gumbo
+			http://www.tutorials.de/forum/members/gumbo.html
+			Thank you very much!
+			
+			finds the very outer braces and changes them to {[ code ]}
+		*/
+		$buffer = '';
+		$depth = 0;
+		for ($i=0; $i < strlen($str); $i++)
+		{
+			$char = $str[$i];
+			switch ($char)
+			{
+				case '{':
+					$depth++;
+					if ($depth === 1)
+					{
+						$buffer .= '{[';
+					}
+					else
+					{
+						$buffer .= $char;
+					}
+					break;
+				case '}':
+					$depth--;
+					if ($depth === 0)
+					{
+						$buffer .= ']}';
+						continue;
+					}
+					else
+					{
+						$buffer .= $char;
+					}
+					break;
+				default:
+					$buffer .= $char;
+			}
+		}
+		return $buffer;
+	}//end private function changeBraces */
+	
+  /**
+   *  
+   *
+   */
 	private function manageOrder()
 	{
 		/*
@@ -546,8 +661,12 @@ class xCSS
 		}
 		// and give it back
 		$this->parts = $sorted;
-	}
+	}//end private function manageOrder */
 
+  /**
+   *  
+   *
+   */
 	private function finalParse($filename)
 	{
 		foreach($this->parts as $keystr => $codestr)
@@ -578,8 +697,12 @@ class xCSS
 			}
 		}
 		$this->finalFile[$filename] = $this->creatCSS();
-	}
+	}//end private function finalParse */
 	
+  /**
+   *  
+   *
+   */
 	private function creatCSS()
 	{
 		$result = null;
@@ -599,8 +722,12 @@ class xCSS
 		}
 		
 		return $result;
-	}
+	}//end private function creatCSS */
 	
+  /**
+   *  
+   *
+   */
 	private function creatFile($content, $filename)
 	{
 		if($this->debugmode)
@@ -633,5 +760,6 @@ class xCSS
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
-	}
-}
+	}//end private function creatFile */
+	
+}//end class Xcss
