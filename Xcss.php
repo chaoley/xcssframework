@@ -69,23 +69,20 @@ class Xcss
    */
 	private $levelparts;
 
-	// final css nodes as an array
   /**
-   * nodes that will be extended some level later
+   * final css nodes as an array
    * @var $css
    */
 	private $css;
-	
-	// vars declared in xCSS files
+
   /**
-   * nodes that will be extended some level later
+   * vars declared in xCSS files
    * @var $xCSSvars
    */
 	private $xCSSvars;
 	
-	// output string for each CSS file
   /**
-   * nodes that will be extended some level later
+   * output string for each CSS file
    * @var $finalFile
    */
 	private $finalFile;
@@ -150,9 +147,16 @@ class Xcss
 // Public Interface Methodes
 ////////////////////////////////////////////////////////////////////////////////
 	
+	/**
+	 * 
+	 *
+	 */
   public function compile()
   {
-    for($i=0; $i < count($this->xCSSfiles); $i++)
+    
+    $numFiles = count($this->xCSSfiles);
+    
+    for($i=0; $i < $numFiles; $i++)
     {
       $this->parts = null;
       $this->filecont = null;
@@ -167,7 +171,7 @@ class Xcss
         {
           $this->startSplitCont();
           
-          if(count($this->parts) > 0)
+          if(count($this->parts))
           {
             $this->parseLevel();
             
@@ -195,7 +199,7 @@ class Xcss
         $this->creatFile($this->useVars($fcont), $fname);
       }
     }
-  }
+  }//end public function compile */
 	
 ////////////////////////////////////////////////////////////////////////////////
 // Private internal Methodes
@@ -275,13 +279,13 @@ class Xcss
 	}//end private function startSplitCont */
 	
 	/**
-	 * 
+	 * @var string $codestr
 	 *
 	 */
 	private function setupVars($codestr)
 	{
 		$codes = explode(";", $codestr);
-		if(count($codes) > 0)
+		if(count($codes) )
 		{
 			foreach($codes as $code)
 			{
@@ -291,7 +295,7 @@ class Xcss
 					list($varkey, $varcode) = explode("=", $code);
 					$varkey = trim($varkey);
 					$varcode = trim($varcode);
-					if(strlen($varkey) > 0)
+					if(strlen($varkey))
 					{
 						$this->xCSSvars[$varkey] = $varcode;
 					}
@@ -375,7 +379,10 @@ class Xcss
 					$with_this_key = $child.' extends '.$parents[0];
 					
 					$add_keys = array();
-					for($i = 1; $i < count($parents); $i++)
+					
+					$numParents = count($parents);
+					
+					for($i = 1; $i < $numParents; $i++)
 					{
 						array_push($add_keys,$child.' extends '.$parents[$i]);
 					}
@@ -673,13 +680,15 @@ class Xcss
 		{
 			if( ! preg_match("/^(\s+|)$/", $codestr))
 			{
-				$codestr = trim($codestr);
+				
+			  $codestr = trim($codestr);
 				if( ! isset($this->css[$keystr]))
 				{
 					$this->css[$keystr] = array();
 				}
 				$codes = explode(";",$codestr);
-				if(count($codes) > 0)
+				
+				if(count($codes) )
 				{
 					foreach($codes as $code)
 					{
@@ -694,6 +703,7 @@ class Xcss
 						}
 					}
 				}
+				
 			}
 		}
 		$this->finalFile[$filename] = $this->creatCSS();
@@ -749,7 +759,9 @@ class Xcss
 		$filepath_dirs_arr = explode('/', $filepath);
 		$filepath_dirs = null;
 		
-		for($i = 0; $i < (count($filepath_dirs_arr)-1); $i++)
+		$numFilpathDirs = count($filepath_dirs_arr)-1;
+		
+		for($i = 0; $i < $numFilpathDirs; $i++)
 		{
 			$filepath_dirs .= $filepath_dirs_arr[$i].'/';
 		}
