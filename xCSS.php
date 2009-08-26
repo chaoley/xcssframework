@@ -19,12 +19,12 @@ class xCss
 	/**
 	 * @var $path_css_dir
 	 */
-	private $path_css_dir;
+	private $pathCssDir;
 	
   /**
    * @var $mastercssfile
    */
-	private $mastercssfile;
+	private $masterCssFile;
 	
   /**
    * @var $xCSSfile
@@ -34,7 +34,7 @@ class xCss
   /**
    * @var $cssfile
    */
-	private $cssfile;
+	private $cssFile;
 	
   /**
    * @var $construct
@@ -49,13 +49,13 @@ class xCss
   /**
    * @var $debugmode
    */
-	private $debugmode;
+	private $debugMode;
 
   /**
    * hole content of the xCSS file
    * @var $filecont
    */
-	private $filecont;
+	private $fileContent;
 	
   /**
    * an array of keys(selectors) and values(propertys)
@@ -67,7 +67,7 @@ class xCss
    * nodes that will be extended some level later
    * @var $levelparts
    */
-	private $levelparts;
+	private $levelParts;
 
   /**
    * final css nodes as an array
@@ -97,33 +97,33 @@ class xCss
 	 */
 	public function __construct(array $cfg)
 	{
-		$this->levelparts = array();
+		$this->levelParts = array();
 		$this->xCSSvars = array();
 		
-		$this->path_css_dir = isset($cfg['path_to_css_dir']) ? $cfg['path_to_css_dir'] : '../';
+		$this->pathCssDir = isset($cfg['path_to_css_dir']) ? $cfg['path_to_css_dir'] : '../';
 		
 		if(isset($cfg['xCSS_files']))
 		{
 			$this->xCSSfiles = array();
-			$this->cssfile = array();
-			foreach($cfg['xCSS_files'] as $xCSSfile => $cssfile)
+			$this->cssFile = array();
+			foreach($cfg['xCSS_files'] as $xCSSfile => $cssFile)
 			{
 				array_push($this->xCSSfiles, $xCSSfile);
 				// get rid of the media properties
-				$file = explode(':', $cssfile);
-				array_push($this->cssfile, trim($file[0]));
+				$file = explode(':', $cssFile);
+				array_push($this->cssFile, trim($file[0]));
 			}
 		}
 		else
 		{
 			$this->xCSSfiles = array('xCSS.xcss');
-			$this->cssfile = array('xCSS_generated.css');
+			$this->cssFile = array('xCSS_generated.css');
 		}
 		
 		// CSS master file
 		if(isset($cfg['master_file']) && $cfg['master_file'] === TRUE)
 		{
-			$this->mastercssfile = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
+			$this->masterCssFile = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
 			
 			$reset = isset($cfg['reset_files']) ? $cfg['reset_files'] : null;
 			$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : null;
@@ -132,15 +132,13 @@ class xCss
 			$this->creatMasterFile($reset, $xcssf, $hook);
 		}
 		
-		$this->construct = isset($cfg['construct_name']) ? $cfg['construct_name'] : 'self';
-		
-		$this->compress = isset($cfg['compress']) ? $cfg['compress'] : false;
-		
-		$this->debugmode = isset($cfg['debugmode']) ? $cfg['debugmode'] : false;
+		$this->construct  = isset($cfg['construct_name']) ? $cfg['construct_name'] : 'self';
+		$this->compress   = isset($cfg['compress']) ? $cfg['compress'] : false;
+		$this->debugMode  = isset($cfg['debugmode']) ? $cfg['debugmode'] : false;
 		
 		// this is needed to be able to extend selectors across mulitple xCSS files
-		$this->xCSSfiles = array_reverse($this->xCSSfiles);
-		$this->cssfile = array_reverse($this->cssfile);
+		$this->xCSSfiles  = array_reverse($this->xCSSfiles);
+		$this->cssFile    = array_reverse($this->cssFile);
 	}
 	
 ////////////////////////////////////////////////////////////////////////////////
@@ -159,15 +157,15 @@ class xCss
     for($i=0; $i < $numFiles; $i++)
     {
       $this->parts = null;
-      $this->filecont = null;
+      $this->fileContent = null;
       $this->css = null;
       
-      $filename = $this->path_css_dir.$this->xCSSfiles[$i];
+      $filename = $this->pathCssDir.$this->xCSSfiles[$i];
       if(file_exists($filename))
       {
-        $this->filecont = str_replace('ï»¿', '', utf8_encode(file_get_contents($filename)));
+        $this->fileContent = str_replace('ï»¿', '', utf8_encode(file_get_contents($filename)));
         
-        if(strlen($this->filecont)>1)
+        if(strlen($this->fileContent)>1)
         {
           $this->startSplitCont();
           
@@ -177,12 +175,12 @@ class xCss
             
             $this->manageOrder();
             
-            if( ! empty($this->levelparts))
+            if( ! empty($this->levelParts))
             {
               $this->manageGlobalExtends();
             }
             
-            $this->finalParse($this->cssfile[$i]);
+            $this->finalParse($this->cssFile[$i]);
           }
         }
       }
@@ -199,6 +197,7 @@ class xCss
         $this->creatFile($this->useVars($fcont), $fname);
       }
     }
+    
   }//end public function compile */
 	
 ////////////////////////////////////////////////////////////////////////////////
@@ -214,28 +213,29 @@ class xCss
 	private function creatMasterFile(array $reset = array(), array $main = array(), array $hook = array())
 	{
 		$files = array();
-		foreach($reset as $fiel)
+		foreach($reset as $file)
 		{
-			array_push($files, $fiel);
+			array_push($files, $file);
 		}
-		foreach($main as $fiel)
+		foreach($main as $file)
 		{
-			array_push($files, $fiel);
+			array_push($files, $file);
 		}
-		foreach($hook as $fiel)
+		foreach($hook as $file)
 		{
-			array_push($files, $fiel);
+			array_push($files, $file);
 		}
 		
-		$masterFileCont = null;
+		$masterFileContent = null;
 		foreach($files as $file)
 		{
 			$file = explode(':', $file);
 			$props = isset($file[1]) ? ' '.trim($file[1]) : '';
-			$masterFileCont .= '@import url("'.trim($file[0]).'")'.$props.';'."\n";
+			$masterFileContent .= '@import url("'.trim($file[0]).'")'.$props.';'."\n";
 		}
 		
-		$this->creatFile($masterFileCont, $this->mastercssfile);
+		$this->creatFile($masterFileContent, $this->masterCssFile);
+		
 	}//end private function creatMasterFile */
 	
 
@@ -246,32 +246,32 @@ class xCss
 	private function startSplitCont()
 	{
 		// removes multiple line comments
-		$this->filecont = preg_replace("/\/\*(.*)?\*\//Usi", "", $this->filecont);
+		$this->fileContent = preg_replace("/\/\*(.*)?\*\//Usi", "", $this->fileContent);
 		// removes inline comments, but not :// for http://
-		$this->filecont .= "\n";
-		$this->filecont = preg_replace("/[^:]\/\/.+?\n/", "", $this->filecont);
+		$this->fileContent .= "\n";
+		$this->fileContent = preg_replace("/[^:]\/\/.+?\n/", "", $this->fileContent);
 		
-		$this->filecont = $this->changeBraces($this->filecont);
+		$this->fileContent = $this->changeBraces($this->fileContent);
 		
-		$this->filecont = explode("]}", $this->filecont);
+		$this->fileContent = explode("]}", $this->fileContent);
 		
-		foreach($this->filecont as $i => $part)
+		foreach($this->fileContent as $i => $part)
 		{
 			$part = trim($part);
 			if( ! empty($part))
 			{
-				list($keystr, $codestr) = explode("{[", $part);
-				$keystr = trim($keystr);
+				list($keyStr, $codeStr) = explode("{[", $part);
+				$keyStr = trim($keyStr);
 				// adding new line to all (,) in selectors, to be able to find them for 'extends' later
-				$keystr = str_replace(',', ",\n", $keystr);
-				if($keystr == 'vars')
+				$keyStr = str_replace(',', ",\n", $keyStr);
+				if($keyStr == 'vars')
 				{
-					$this->setupVars($codestr);
-					unset($this->filecont[$i]);
+					$this->setupVars($codeStr);
+					unset($this->fileContent[$i]);
 				}
-				else if($keystr != '')
+				else if($keyStr != '')
 				{
-					$this->parts[$keystr] = $codestr;
+					$this->parts[$keyStr] = $codeStr;
 				}
 			}
 		}
@@ -279,12 +279,12 @@ class xCss
 	}//end private function startSplitCont */
 	
 	/**
-	 * @var string $codestr
+	 * @var string $codeStr
 	 *
 	 */
-	private function setupVars($codestr)
+	private function setupVars($codeStr)
 	{
-		$codes = explode(";", $codestr);
+		$codes = explode(";", $codeStr);
 		if(count($codes) )
 		{
 			foreach($codes as $code)
@@ -292,12 +292,12 @@ class xCss
 				$code = trim($code);
 				if( ! empty($code))
 				{
-					list($varkey, $varcode) = explode("=", $code);
-					$varkey = trim($varkey);
-					$varcode = trim($varcode);
-					if(strlen($varkey))
+					list($varKey, $varCode) = explode("=", $code);
+					$varKey  = trim($varKey);
+					$varCode = trim($varCode);
+					if(strlen($varKey))
 					{
-						$this->xCSSvars[$varkey] = $varcode;
+						$this->xCSSvars[$varKey] = $varCode;
 					}
 				}
 			}
@@ -306,9 +306,9 @@ class xCss
 	
 	private function useVars($cont)
 	{
-		foreach($this->xCSSvars as $varkey => $varcode)
+		foreach($this->xCSSvars as $varKey => $varCode)
 		{
-			$cont = str_replace($varkey, $varcode, $cont);
+			$cont = str_replace($varKey, $varCode, $cont);
 		}
 		return $cont;
 	}//end private function useVars */
@@ -327,25 +327,25 @@ class xCss
 	{
 		// helps to find all the extenders of the global extended selector
 		
-		foreach($this->levelparts as $keystr => $codestr)
+		foreach($this->levelParts as $keyStr => $codeStr)
 		{
-			if(strpos($keystr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				
-				$child = trim($result[1][0]);
+				$child  = trim($result[1][0]);
 				$parent = trim($result[3][0]);
 				
-				foreach($this->parts as $p_keystr => $p_codestr)
+				foreach($this->parts as $pKeyStr => $pCodeStr)
 				{
 					// to be sure we get all the children we need to find the parent selector
 					// this must be the one that has no , after his name
-					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.",") !== FALSE))
+					if(strpos($pKeyStr, ",\n".$child) !== FALSE && ( ! strpos($pKeyStr, $child.",") !== FALSE))
 					{
-						$p_keys = explode(",\n", $p_keystr);
-						foreach($p_keys as $p_key)
+						$pKeys = explode(",\n", $pKeyStr);
+						foreach($pKeys as $pKey)
 						{
-							$this->levelparts[$p_key." extends ".$parent] = '';
+							$this->levelParts[$pKey." extends ".$parent] = '';
 						}
 					}
 				}
@@ -362,32 +362,32 @@ class xCss
 		//	To be able to manage multiple extends, you need to
 		//	destroy the actual node and creat many nodes that have
 		//	mono extend. the first one gets all the css rules
-		foreach($this->parts as $keystr => $codestr)
+		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if(strpos($keystr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
 				
 				if(strpos($parent, '&') !== FALSE)
 				{
-					$kill_this = $child.' extends '.$parent;
+					$killThis = $child.' extends '.$parent;
 					
 					$parents = explode(' & ', $parent);
-					$with_this_key = $child.' extends '.$parents[0];
+					$withThisKey = $child.' extends '.$parents[0];
 					
-					$add_keys = array();
+					$addKeys = array();
 					
 					$numParents = count($parents);
 					
 					for($i = 1; $i < $numParents; $i++)
 					{
-						array_push($add_keys,$child.' extends '.$parents[$i]);
+						array_push($addKeys,$child.' extends '.$parents[$i]);
 					}
 					
-					$this->parts = $this->addNodeAtOrder($kill_this, $with_this_key, $codestr, $add_keys);
+					$this->parts = $this->addNodeAtOrder($killThis, $withThisKey, $codeStr, $addKeys);
 				}
 			}
 		}
@@ -397,25 +397,25 @@ class xCss
 	 * 
 	 *
 	 */
-	private function addNodeAtOrder($kill_this, $with_this_key, $and_this_value, $additional_key = array())
+	private function addNodeAtOrder($killThis, $withThisKey, $andThisValue, $additionalKey = array())
 	{
-		foreach($this->parts as $keystr => $codestr)
+		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if($keystr == $kill_this)
+			if($keyStr == $killThis)
 			{
-				$temp[$with_this_key] = $and_this_value;
+				$temp[$withThisKey] = $andThisValue;
 				
-				if( ! empty($additional_key))
+				if( ! empty($additionalKey))
 				{
-					foreach($additional_key as $empty_key)
+					foreach($additionalKey as $emptyKey)
 					{
-						$temp[$empty_key] = '';
+						$temp[$emptyKey] = '';
 					}
 				}
 			}
 			else
 			{
-				$temp[$keystr] = $codestr;
+				$temp[$keyStr] = $codeStr;
 			}
 		}
 		
@@ -431,35 +431,35 @@ class xCss
 		// this will manage xCSS rule: 'extends &'
 		$this->manageMultipleExtends();
 		
-		foreach($this->levelparts as $keystr => $codestr)
+		foreach($this->levelParts as $keyStr => $codeStr)
 		{
-			if(strpos($keystr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				
 				$parent = trim($result[3][0]);
-				$child = trim($result[1][0]);
+				$child  = trim($result[1][0]);
 				
 				// true means that the parent node was in the same file
 				if($this->searchForParent($child, $parent))
 				{
 					// remove extended rule
-					unset($this->levelparts[$keystr]);
+					unset($this->levelParts[$keyStr]);
 				}
 			}
 		}
 
-		foreach($this->parts as $keystr => $codestr)
+		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if(strpos($keystr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				if(count($result[3]) > 1)
 				{
-					unset($this->parts[$keystr]);
-					$keystr = str_replace(' extends '.$result[3][0], '', $keystr);
-					$keystr .= ' extends '.$result[3][0];
-					$this->parts[$keystr] = $codestr;
+					unset($this->parts[$keyStr]);
+					$keyStr = str_replace(' extends '.$result[3][0], '', $keyStr);
+					$keyStr .= ' extends '.$result[3][0];
+					$this->parts[$keyStr] = $codeStr;
 					$this->parseExtends();
 					break;
 				}
@@ -471,22 +471,22 @@ class xCss
 				if($this->searchForParent($child, $parent))
 				{
 					// if not empty, creat own node with extended code
-					if( ! preg_match("/^(\s+|)$/", $codestr))
+					if( ! preg_match("/^(\s+|)$/", $codeStr))
 					{
-						$this->parts[$child] = $codestr;
+						$this->parts[$child] = $codeStr;
 					}
 					
-					unset($this->parts[$keystr]);
+					unset($this->parts[$keyStr]);
 				}
 				else
 				{
-					if( ! preg_match("/^(\s+|)$/", $codestr))
+					if( ! preg_match("/^(\s+|)$/", $codeStr))
 					{
-						$this->parts[$child] = $codestr;
+						$this->parts[$child] = $codeStr;
 					}
-					unset($this->parts[$keystr]);
-					// add this node to levelparts to find it later
-					$this->levelparts[$keystr] = $codestr;
+					unset($this->parts[$keyStr]);
+					// add this node to levelParts to find it later
+					$this->levelParts[$keyStr] = $codeStr;
 				}
 			}
 		}
@@ -498,38 +498,38 @@ class xCss
 	 */
 	private function searchForParent($child, $parent)
 	{
-		$parent_found = false;
-		foreach ($this->parts as $keystr => $codestr)
+		$parentFound = false;
+		foreach ($this->parts as $keyStr => $codeStr)
 		{
-			$sep_keys = explode(",\n", $keystr);
-			foreach ($sep_keys as $s_key)
+			$sepKeys = explode(",\n", $keyStr);
+			foreach ($sepKeys as $sKey)
 			{
-				if($parent == $s_key)
+				if($parent == $sKey)
 				{
-					$this->parts = $this->addNodeAtOrder($keystr, $child.",\n".$keystr, $codestr);
+					$this->parts = $this->addNodeAtOrder($keyStr, $child.",\n".$keyStr, $codeStr);
 					// ever since now the code doesn't make any sens but it works
 					// finds all the parent selectors with another bind selectors behind
-					foreach ($this->parts as $keystr => $codestr)
+					foreach ($this->parts as $keyStr => $codeStr)
 					{
-						$sep_keys = explode(",\n", $keystr);
-						foreach ($sep_keys as $s_key)
+						$sepKeys = explode(",\n", $keyStr);
+						foreach ($sepKeys as $sKey)
 						{
-							if(strpos($s_key, $parent) !== FALSE && $parent != $s_key)
+							if(strpos($sKey, $parent) !== FALSE && $parent != $sKey)
 							{
-								$childextra = str_replace($parent, '', $s_key);
-								if(substr($childextra, 0, 1) == ' ')
+								$childExtra = str_replace($parent, '', $sKey);
+								if(substr($childExtra, 0, 1) == ' ')
 								{
 									// get rid off not extended parent node
-									$this->parts = $this->addNodeAtOrder($keystr, $child.$childextra.",\n".$keystr, $codestr);
+									$this->parts = $this->addNodeAtOrder($keyStr, $child.$childExtra.",\n".$keyStr, $codeStr);
 								}
 							}
 						}
 					}
-					$parent_found = true;
+					$parentFound = true;
 				}
 			}
 		}
-		return $parent_found;
+		return $parentFound;
 	}//end private function searchForParent */
 	
   /**
@@ -538,19 +538,19 @@ class xCss
    */
 	private function parseChilds()
 	{
-		$still_childs_left = false;
-		foreach($this->parts as $keystr => $codestr)
+		$stillChildsLeft = false;
+		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if(strpos($codestr, '{') !== FALSE)
+			if(strpos($codeStr, '{') !== FALSE)
 			{
-				$keystr = trim($keystr);
-				unset($this->parts[$keystr]);
-				unset($this->levelparts[$keystr]);
-				$this->manageChildren($keystr, $this->construct."{}\n".$codestr);
-				$still_childs_left = true; // maybe
+				$keyStr = trim($keyStr);
+				unset($this->parts[$keyStr]);
+				unset($this->levelParts[$keyStr]);
+				$this->manageChildren($keyStr, $this->construct."{}\n".$codeStr);
+				$stillChildsLeft = true; // maybe
 			}
 		}
-		if($still_childs_left)
+		if($stillChildsLeft)
 		{
 			$this->parseLevel();
 		}
@@ -560,34 +560,34 @@ class xCss
    *  
    *
    */
-	private function manageChildren($keystr, $codestr)
+	private function manageChildren($keyStr, $codeStr)
 	{
-		$codestr = $this->changeBraces($codestr);
+		$codeStr = $this->changeBraces($codeStr);
 		
-		$c_parts = explode(']}', $codestr);
-		foreach ($c_parts as $c_part)
+		$cParts = explode(']}', $codeStr);
+		foreach ($cParts as $cPart)
 		{
-			$c_part = trim($c_part);
-			if( ! empty($c_part))
+			$cPart = trim($cPart);
+			if( ! empty($cPart))
 			{
-				list($c_keystr, $c_codestr) = explode('{[', $c_part);
-				$c_keystr = trim($c_keystr);
+				list($cKeyStr, $cCodeStr) = explode('{[', $cPart);
+				$cKeyStr = trim($cKeyStr);
 
-				if($c_keystr != '')
+				if($cKeyStr != '')
 				{
-					$sep_keys = explode(",\n", $keystr);
+					$sepKeys = explode(",\n", $keyStr);
 					$betterKey = '';
 
-					foreach ($sep_keys as $s_key)
+					foreach ($sepKeys as $sKey)
 					{
-						$betterKey .= $s_key.' '.$c_keystr.",\n";
+						$betterKey .= $sKey.' '.$cKeyStr.",\n";
 					}
 
 					if(strpos($betterKey, $this->construct) !== FALSE)
 					{
 						$betterKey = str_replace(' '.$this->construct, '', $betterKey);
 					}
-					$this->parts[substr($betterKey,0,-2)] = $c_codestr;
+					$this->parts[substr($betterKey,0,-2)] = $cCodeStr;
 				}
 			}
 		}
@@ -653,18 +653,18 @@ class xCss
 			this function brings the CSS nodes in the right order
 			becouse the last value always wins
 		*/
-		foreach ($this->parts as $keystr => $codestr)
+		foreach ($this->parts as $keyStr => $codeStr)
 		{
 			// ok let's fide out who has the most 'extends' in his key
 			// the more the higher this node will go
-			$sep_keys = explode(",\n", $keystr);
-			$order[$keystr] = count($sep_keys) * -1;
+			$sepKeys = explode(",\n", $keyStr);
+			$order[$keyStr] = count($sepKeys) * -1;
 		}
 		asort($order);
-		foreach ($order as $keystr => $orderNr)
+		foreach ($order as $keyStr => $orderNr)
 		{
 			// with the sorted order we can now redeclare the values
-			$sorted[$keystr] = $this->parts[$keystr];
+			$sorted[$keyStr] = $this->parts[$keyStr];
 		}
 		// and give it back
 		$this->parts = $sorted;
@@ -674,19 +674,19 @@ class xCss
    *  
    *
    */
-	private function finalParse($filename)
+	private function finalParse($fileName)
 	{
-		foreach($this->parts as $keystr => $codestr)
+		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if( ! preg_match("/^(\s+|)$/", $codestr))
+			if( ! preg_match("/^(\s+|)$/", $codeStr))
 			{
 				
-			  $codestr = trim($codestr);
-				if( ! isset($this->css[$keystr]))
+			  $codeStr = trim($codeStr);
+				if( ! isset($this->css[$keyStr]))
 				{
-					$this->css[$keystr] = array();
+					$this->css[$keyStr] = array();
 				}
-				$codes = explode(";",$codestr);
+				$codes = explode(";",$codeStr);
 				
 				if(count($codes) )
 				{
@@ -695,10 +695,10 @@ class xCss
 						$code = trim($code);
 						if( ! empty($code))
 						{
-							list($codekeystr, $codevalue) = explode(":", $code);
-							if(strlen($codekeystr) > 0)
+							list($codeKeyStr, $codeValue) = explode(":", $code);
+							if(strlen($codeKeyStr) > 0)
 							{
-								$this->css[$keystr][trim($codekeystr)] = trim($codevalue);
+								$this->css[$keyStr][trim($codeKeyStr)] = trim($codeValue);
 							}
 						}
 					}
@@ -706,7 +706,7 @@ class xCss
 				
 			}
 		}
-		$this->finalFile[$filename] = $this->creatCSS();
+		$this->finalFile[$fileName] = $this->creatCSS();
 	}//end private function finalParse */
 	
   /**
@@ -738,11 +738,11 @@ class xCss
    *  
    *
    */
-	private function creatFile($content, $filename)
+	private function creatFile($content, $fileName)
 	{
-		if($this->debugmode)
+		if($this->debugMode)
 		{
-			echo "/*\nFILENAME:\n".$filename."\nCONTENT:\n".$content."*/\n//------------------------------------\n";
+			echo "/*\nFILENAME:\n".$fileName."\nCONTENT:\n".$content."*/\n//------------------------------------\n";
 		}
 		else
 		{
@@ -755,7 +755,7 @@ class xCss
 			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), '', $content);
 		}
 		
-		$filepath = $this->path_css_dir.$filename;
+		$filepath = $this->pathCssDir.$fileName;
 		$filepath_dirs_arr = explode('/', $filepath);
 		$filepath_dirs = null;
 		
@@ -768,7 +768,7 @@ class xCss
 		
 		if( ! is_dir($filepath_dirs))
 		{
-			die("alert(\"No such directory '".$filename."'\");");
+			die("alert(\"No such directory '".$fileName."'\");");
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
