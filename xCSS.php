@@ -121,7 +121,7 @@ class xCss
 		}
 		
 		// CSS master file
-		if(isset($cfg['master_file']) && $cfg['master_file'] === TRUE)
+		if(isset($cfg['master_file']) && $cfg['master_file'] === true)
 		{
 			$this->masterCssFile = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
 			
@@ -139,7 +139,7 @@ class xCss
 		// this is needed to be able to extend selectors across mulitple xCSS files
 		$this->xCSSfiles  = array_reverse($this->xCSSfiles);
 		$this->cssFile    = array_reverse($this->cssFile);
-	}
+	}//end public function __construct
 	
 ////////////////////////////////////////////////////////////////////////////////
 // Public Interface Methodes
@@ -284,26 +284,30 @@ class xCss
 	 */
 	private function setupVars($codeStr)
 	{
-		$codes = explode(";", $codeStr);
-		if(count($codes) )
-		{
-			foreach($codes as $code)
-			{
-				$code = trim($code);
-				if( ! empty($code))
-				{
-					list($varKey, $varCode) = explode("=", $code);
-					$varKey  = trim($varKey);
-					$varCode = trim($varCode);
-					if(strlen($varKey))
-					{
-						$this->xCSSvars[$varKey] = $varCode;
-					}
-				}
-			}
-		}
+		if(!$codes = explode(";", $codeStr))
+		  return;
+		
+	  foreach($codes as $code)
+    {
+      $code = trim($code);
+      if( $code != '' )
+      {
+        list($varKey, $varCode) = explode("=", $code);
+        $varKey  = trim($varKey);
+        $varCode = trim($varCode);
+        
+        if(strlen($varKey))
+        {
+          $this->xCSSvars[$varKey] = $varCode;
+        }
+      }
+    }
+	  
 	}//end private function setupVars */
 	
+	/**
+	 * @param $cont
+	 */
 	private function useVars($cont)
 	{
 		foreach($this->xCSSvars as $varKey => $varCode)
@@ -313,6 +317,9 @@ class xCss
 		return $cont;
 	}//end private function useVars */
 
+	/**
+	 * 
+	 */
 	private function parseLevel()
 	{
 		// this will manage xCSS rule: 'extends'
@@ -323,13 +330,16 @@ class xCss
 	}//end private function parseLevel */
 	
 	
+  /**
+   * 
+   */
 	private function manageGlobalExtends()
 	{
 		// helps to find all the extenders of the global extended selector
 		
 		foreach($this->levelParts as $keyStr => $codeStr)
 		{
-			if(strpos($keyStr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== false)
 			{
 				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				
@@ -340,7 +350,7 @@ class xCss
 				{
 					// to be sure we get all the children we need to find the parent selector
 					// this must be the one that has no , after his name
-					if(strpos($pKeyStr, ",\n".$child) !== FALSE && ( ! strpos($pKeyStr, $child.",") !== FALSE))
+					if(strpos($pKeyStr, ",\n".$child) !== false && ( ! strpos($pKeyStr, $child.",") !== false))
 					{
 						$pKeys = explode(",\n", $pKeyStr);
 						foreach($pKeys as $pKey)
@@ -364,14 +374,14 @@ class xCss
 		//	mono extend. the first one gets all the css rules
 		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if(strpos($keyStr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== false)
 			{
 				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
 				
-				if(strpos($parent, '&') !== FALSE)
+				if(strpos($parent, '&') !== false)
 				{
 					$killThis = $child.' extends '.$parent;
 					
@@ -433,7 +443,7 @@ class xCss
 		
 		foreach($this->levelParts as $keyStr => $codeStr)
 		{
-			if(strpos($keyStr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== false)
 			{
 				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				
@@ -451,7 +461,7 @@ class xCss
 
 		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if(strpos($keyStr, 'extends') !== FALSE)
+			if(strpos($keyStr, 'extends') !== false)
 			{
 				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keyStr, $result);
 				if(count($result[3]) > 1)
@@ -514,7 +524,7 @@ class xCss
 						$sepKeys = explode(",\n", $keyStr);
 						foreach ($sepKeys as $sKey)
 						{
-							if(strpos($sKey, $parent) !== FALSE && $parent != $sKey)
+							if(strpos($sKey, $parent) !== false && $parent != $sKey)
 							{
 								$childExtra = str_replace($parent, '', $sKey);
 								if(substr($childExtra, 0, 1) == ' ')
@@ -541,7 +551,7 @@ class xCss
 		$stillChildsLeft = false;
 		foreach($this->parts as $keyStr => $codeStr)
 		{
-			if(strpos($codeStr, '{') !== FALSE)
+			if(strpos($codeStr, '{') !== false)
 			{
 				$keyStr = trim($keyStr);
 				unset($this->parts[$keyStr]);
@@ -583,7 +593,7 @@ class xCss
 						$betterKey .= $sKey.' '.$cKeyStr.",\n";
 					}
 
-					if(strpos($betterKey, $this->construct) !== FALSE)
+					if(strpos($betterKey, $this->construct) !== false)
 					{
 						$betterKey = str_replace(' '.$this->construct, '', $betterKey);
 					}
