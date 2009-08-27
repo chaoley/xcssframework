@@ -116,7 +116,8 @@ class xCSS
 	
 	public function compile()
 	{
-		for($i=0; $i < count($this->xCSSfiles); $i++)
+		$for_c = count($this->xCSSfiles);
+		for($i=0; $i < $for_c; $i++)
 		{
 			$this->parts = null;
 			$this->filecont = null;
@@ -288,7 +289,8 @@ class xCSS
 					$with_this_key = $child.' extends '.$parents[0];
 					
 					$add_keys = array();
-					for($i = 1; $i < count($parents); $i++)
+					$for_c = count($parents);
+					for($i = 1; $i < $for_c; $i++)
 					{
 						array_push($add_keys,$child.' extends '.$parents[$i]);
 					}
@@ -491,7 +493,8 @@ class xCSS
 			*/
 			$buffer = '';
 			$depth = 0;
-			for ($i=0; $i < strlen($str); $i++)
+			$for_c = strlen($str);
+			for($i=0; $i < $for_c; $i++)
 			{
 				$char = $str[$i];
 				switch ($char)
@@ -622,8 +625,8 @@ class xCSS
 		$filepath = $this->path_css_dir.$filename;
 		$filepath_dirs_arr = explode('/', $filepath);
 		$filepath_dirs = null;
-		
-		for($i = 0; $i < (count($filepath_dirs_arr)-1); $i++)
+		$for_c = count($filepath_dirs_arr)-1;
+		for($i = 0; $i < $for_c; $i++)
 		{
 			$filepath_dirs .= $filepath_dirs_arr[$i].'/';
 		}
