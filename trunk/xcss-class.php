@@ -415,7 +415,6 @@ class xCSS
 									$childextra = str_replace($parent, '', $s_key);
 									
 									if( ! (strpos($childextra, 'extends') !== FALSE))
-							//		if(substr($childextra, 0, 1) == ' ')
 									{
 										// get rid off not extended parent node
 										$this->parts = $this->addNodeAtOrder($keystr, $child.$childextra.",\n".$keystr, $codestr);

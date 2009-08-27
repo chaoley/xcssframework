@@ -591,7 +591,7 @@ class xCss
 
 					foreach ($sepKeys as $sKey)
 					{
-						$betterKey .= $keyStr.' '.trim($sKey).",\n";
+						$betterKey .= $sKey.' '.$cKeyStr.",\n";
 					}
 
 					if(strpos($betterKey, $this->construct) !== false)
