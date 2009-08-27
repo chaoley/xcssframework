@@ -8,7 +8,7 @@
  * @license    http://xcss.antpaw.org/about/
  */
 
-define('XCSSCLASS', 'xcss-0.9.2.php');
+define('XCSSCLASS', 'xcss-class.php');
 file_exists(XCSSCLASS) ? include XCSSCLASS : die('alert("Can\'t find the xCSS class file: \''.XCSSCLASS.'\'"!);');
 
 define('XCSSCONFIG', 'config.php');
