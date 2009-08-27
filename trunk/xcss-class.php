@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.2
+ * @version    0.9.3
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -411,7 +411,8 @@ class xCSS
 								if(strpos($s_key, $parent) !== FALSE && $parent != $s_key)
 								{
 									$childextra = str_replace($parent, '', $s_key);
-									if(substr($childextra, 0, 1) == ' ')
+									
+									if( ! (strpos($childextra, 'extends') !== FALSE))
 									{
 										// get rid off not extended parent node
 										$this->parts = $this->addNodeAtOrder($keystr, $child.$childextra.",\n".$keystr, $codestr);
@@ -461,12 +462,12 @@ class xCSS
 
 					if($c_keystr != '')
 					{
-						$sep_keys = explode(",\n", $keystr);
+						$sep_keys = explode(",", $c_keystr);
 						$betterKey = '';
-
+						
 						foreach ($sep_keys as $s_key)
 						{
-							$betterKey .= $s_key.' '.$c_keystr.",\n";
+							$betterKey .= $keystr.' '.trim($s_key).",\n";
 						}
 
 						if(strpos($betterKey, $this->construct) !== FALSE)
