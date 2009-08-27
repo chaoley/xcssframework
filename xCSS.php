@@ -4,7 +4,7 @@
  *
  * @author     Anton Pawlik
  * @author     Dominik Bonsch <dominik.bonsch@webfrap.de>
- * @version    0.9.2
+ * @version    0.9.3
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -527,7 +527,8 @@ class xCss
 							if(strpos($sKey, $parent) !== false && $parent != $sKey)
 							{
 								$childExtra = str_replace($parent, '', $sKey);
-								if(substr($childExtra, 0, 1) == ' ')
+								
+								if( ! (strpos($childExtra, 'extends') !== FALSE))
 								{
 									// get rid off not extended parent node
 									$this->parts = $this->addNodeAtOrder($keyStr, $child.$childExtra.",\n".$keyStr, $codeStr);
@@ -585,12 +586,12 @@ class xCss
 
 				if($cKeyStr != '')
 				{
-					$sepKeys = explode(",\n", $keyStr);
+					$sepKeys = explode(",", $keyStr);
 					$betterKey = '';
 
 					foreach ($sepKeys as $sKey)
 					{
-						$betterKey .= $sKey.' '.$cKeyStr.",\n";
+						$betterKey .= $keyStr.' '.trim($sKey).",\n";
 					}
 
 					if(strpos($betterKey, $this->construct) !== false)
