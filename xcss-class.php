@@ -172,14 +172,14 @@ class xCSS
 		
 		$this->filecont = $this->changeBraces($this->filecont);
 		
-		$this->filecont = explode("]}", $this->filecont);
+		$this->filecont = explode(']}', $this->filecont);
 		
 		foreach($this->filecont as $i => $part)
 		{
 			$part = trim($part);
 			if( ! empty($part))
 			{
-				list($keystr, $codestr) = explode("{[", $part);
+				list($keystr, $codestr) = explode('{[', $part);
 				$keystr = trim($keystr);
 				// adding new line to all (,) in selectors, to be able to find them for 'extends' later
 				$keystr = str_replace(',', ",\n", $keystr);
@@ -198,7 +198,7 @@ class xCSS
 	
 		private function setupVars($codestr)
 		{
-			$codes = explode(";", $codestr);
+			$codes = explode(';', $codestr);
 			if(count($codes) > 0)
 			{
 				foreach($codes as $code)
@@ -206,7 +206,7 @@ class xCSS
 					$code = trim($code);
 					if( ! empty($code))
 					{
-						list($varkey, $varcode) = explode("=", $code);
+						list($varkey, $varcode) = explode('=', $code);
 						$varkey = trim($varkey);
 						$varcode = trim($varcode);
 						if(strlen($varkey) > 0)
@@ -254,12 +254,12 @@ class xCSS
 				{
 					// to be sure we get all the children we need to find the parent selector
 					// this must be the one that has no , after his name
-					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.",") !== FALSE))
+					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.',') !== FALSE))
 					{
 						$p_keys = explode(",\n", $p_keystr);
 						foreach($p_keys as $p_key)
 						{
-							$this->levelparts[$p_key." extends ".$parent] = '';
+							$this->levelparts[$p_key.' extends '.$parent] = '';
 						}
 					}
 				}
@@ -464,12 +464,13 @@ class xCSS
 
 					if($c_keystr != '')
 					{
-						$sep_keys = explode(",\n", $keystr);
-						$betterKey = '';
+						$betterKey = null;
+						$c_keystr = str_replace(',', ",\n".$keystr, $c_keystr);
 						
+						$sep_keys = explode(",\n", $keystr);
 						foreach ($sep_keys as $s_key)
 						{
-							$betterKey .= $s_key.' '.$c_keystr.",\n";
+							$betterKey .= trim($s_key).' '.$c_keystr.",\n";
 						}
 
 						if(strpos($betterKey, $this->construct) !== FALSE)
@@ -563,7 +564,7 @@ class xCSS
 				{
 					$this->css[$keystr] = array();
 				}
-				$codes = explode(";",$codestr);
+				$codes = explode(';', $codestr);
 				if(count($codes) > 0)
 				{
 					foreach($codes as $code)
@@ -571,7 +572,7 @@ class xCSS
 						$code = trim($code);
 						if( ! empty($code))
 						{
-							list($codekeystr, $codevalue) = explode(":", $code);
+							list($codekeystr, $codevalue) = explode(':', $code);
 							if(strlen($codekeystr) > 0)
 							{
 								$this->css[$keystr][trim($codekeystr)] = trim($codevalue);
