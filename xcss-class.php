@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.3
+ * @version    0.9.4
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -42,8 +42,6 @@ class xCSS
 	public function __construct(array $cfg)
 	{
 		$this->levelparts = array();
-		$this->xCSSvars = array();
-		
 		$this->path_css_dir = isset($cfg['path_to_css_dir']) ? $cfg['path_to_css_dir'] : '../';
 		
 		if(isset($cfg['xCSS_files']))
@@ -69,22 +67,30 @@ class xCSS
 		{
 			$this->mastercssfile = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
 			
-			$reset = isset($cfg['reset_files']) ? $cfg['reset_files'] : null;
-			$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : null;
-			$hook = isset($cfg['hook_files']) ? $cfg['hook_files'] : null;
+			$reset = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
+			$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
+			$hook = isset($cfg['hook_files']) ? $cfg['hook_files'] : NULL;
 			
 			$this->creatMasterFile($reset, $xcssf, $hook);
 		}
 		
 		$this->construct = isset($cfg['construct_name']) ? $cfg['construct_name'] : 'self';
 		
-		$this->compress = isset($cfg['compress']) ? $cfg['compress'] : false;
+		$this->compress = isset($cfg['compress']) ? $cfg['compress'] : FALSE;
 		
-		$this->debugmode = isset($cfg['debugmode']) ? $cfg['debugmode'] : false;
+		$this->debugmode = isset($cfg['debugmode']) ? $cfg['debugmode'] : FALSE;
 		
 		// this is needed to be able to extend selectors across mulitple xCSS files
 		$this->xCSSfiles = array_reverse($this->xCSSfiles);
 		$this->cssfile = array_reverse($this->cssfile);
+		
+		
+		$this->xCSSvars = array(
+			'$__doubledot'				=> ':',
+			'$__semicolon'				=> ';',
+			'$__curlybracketopen'		=> '{',
+			'$__curlybracketclosed'		=> '}',
+		);
 	}
 	
 	private function creatMasterFile(array $reset = array(), array $main = array(), array $hook = array())
@@ -103,7 +109,7 @@ class xCSS
 			array_push($files, $fiel);
 		}
 		
-		$masterFileCont = null;
+		$masterFileCont = NULL;
 		foreach($files as $file)
 		{
 			$file = explode(':', $file);
@@ -119,14 +125,23 @@ class xCSS
 		$for_c = count($this->xCSSfiles);
 		for($i=0; $i < $for_c; $i++)
 		{
-			$this->parts = null;
-			$this->filecont = null;
-			$this->css = null;
+			$this->parts = NULL;
+			$this->filecont = NULL;
+			$this->css = NULL;
 			
 			$filename = $this->path_css_dir.$this->xCSSfiles[$i];
 			if(file_exists($filename))
 			{
 				$this->filecont = str_replace('ï»¿', '', utf8_encode(file_get_contents($filename)));
+				
+				//  --('|").*(;|:|\{|\}).*('|")--
+				foreach($this->xCSSvars as $var => $unsafe_char)
+				{
+					$patterns[] = '/(\'|")(.*)('.$unsafe_char.')(.*)(\'|")/';
+					$replacements[] = '$1$2'.$var.'$4$5';
+				}
+				
+				$this->filecont = preg_replace($patterns, $replacements, $this->filecont);
 				
 				if(strlen($this->filecont)>1)
 				{
@@ -340,7 +355,7 @@ class xCSS
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
 				
-				// true means that the parent node was in the same file
+				// TRUE means that the parent node was in the same file
 				if($this->searchForParent($child, $parent))
 				{
 					// remove extended rule
@@ -367,7 +382,7 @@ class xCSS
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
 				
-				// true means that the parent node was in the same file
+				// TRUE means that the parent node was in the same file
 				if($this->searchForParent($child, $parent))
 				{
 					// if not empty, creat own node with extended code
@@ -394,7 +409,7 @@ class xCSS
 	
 		private function searchForParent($child, $parent)
 		{
-			$parent_found = false;
+			$parent_found = FALSE;
 			foreach ($this->parts as $keystr => $codestr)
 			{
 				$sep_keys = explode(",\n", $keystr);
@@ -422,7 +437,7 @@ class xCSS
 								}
 							}
 						}
-						$parent_found = true;
+						$parent_found = TRUE;
 					}
 				}
 			}
@@ -431,7 +446,7 @@ class xCSS
 	
 	private function parseChilds()
 	{
-		$still_childs_left = false;
+		$still_childs_left = FALSE;
 		foreach($this->parts as $keystr => $codestr)
 		{
 			if(strpos($codestr, '{') !== FALSE)
@@ -440,7 +455,7 @@ class xCSS
 				unset($this->parts[$keystr]);
 				unset($this->levelparts[$keystr]);
 				$this->manageChildren($keystr, $this->construct."{}\n".$codestr);
-				$still_childs_left = true; // maybe
+				$still_childs_left = TRUE; // maybe
 			}
 		}
 		if($still_childs_left)
@@ -464,7 +479,7 @@ class xCSS
 
 					if($c_keystr != '')
 					{
-						$betterKey = null;
+						$betterKey = NULL;
 						$c_keystr = str_replace(',', ",\n".$keystr, $c_keystr);
 						
 						$sep_keys = explode(",\n", $keystr);
@@ -587,7 +602,7 @@ class xCSS
 	
 	private function creatCSS()
 	{
-		$result = null;
+		$result = NULL;
 		if(is_array($this->css))
 		{
 			foreach($this->css as $key => $values)
@@ -625,7 +640,7 @@ class xCSS
 		
 		$filepath = $this->path_css_dir.$filename;
 		$filepath_dirs_arr = explode('/', $filepath);
-		$filepath_dirs = null;
+		$filepath_dirs = NULL;
 		$for_c = count($filepath_dirs_arr)-1;
 		for($i = 0; $i < $for_c; $i++)
 		{
