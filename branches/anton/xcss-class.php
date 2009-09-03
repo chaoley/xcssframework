@@ -11,33 +11,36 @@
 
 class xCSS
 {
-	private
 	// config vars
-	$path_css_dir,
-	$mastercssfile,
-	$xCSSfile,
-	$cssfile,
-	$construct,
-	$compress,
-	$debugmode,
+	private $path_css_dir;
+	private $mastercssfile;
+	private $xCSSfile;
+	private $cssfile;
+	private $construct;
+	private $compress;
+	private $debugmode;
 	
 	// hole content of the xCSS file
-	$filecont,
+	private $filecont;
 	
 	// an array of keys(selectors) and values(propertys)
-	$parts,
+	private $parts;
 	
 	// nodes that will be extended some level later
-	$levelparts,
+	private $levelparts;
 
 	// final css nodes as an array
-	$css,
+	private $css;
 	
 	// vars declared in xCSS files
-	$xCSSvars,
+	private $xCSSvars;
 	
 	// output string for each CSS file
-	$finalFile;
+	private $finalFile;
+	
+	// relevant to debugging
+	private $xcss_time_start;
+	private $xcss_output;
 	
 	public function __construct(array $cfg)
 	{
@@ -84,8 +87,16 @@ class xCSS
 		$this->xCSSfiles = array_reverse($this->xCSSfiles);
 		$this->cssfile = array_reverse($this->cssfile);
 		
+		if($this->debugmode)
+		{
+			$this->xcss_time_start = $this->microtime_float();
+		}
 		
 		$this->xCSSvars = array(
+			// unsafe chars will be hidden as vars
+			'$__doubleslash'			=> '//',
+			'$__bigcopen'				=> '/*',
+			'$__bigcclose'				=> '*/',
 			'$__doubledot'				=> ':',
 			'$__semicolon'				=> ';',
 			'$__curlybracketopen'		=> '{',
@@ -113,7 +124,7 @@ class xCSS
 		foreach($files as $file)
 		{
 			$file = explode(':', $file);
-			$props = isset($file[1]) ? ' '.trim($file[1]) : '';
+			$props = isset($file[1]) ? ' '.trim($file[1]) : NULL;
 			$masterFileCont .= '@import url("'.trim($file[0]).'")'.$props.';'."\n";
 		}
 		
@@ -132,18 +143,18 @@ class xCSS
 			$filename = $this->path_css_dir.$this->xCSSfiles[$i];
 			if(file_exists($filename))
 			{
-				$this->filecont = str_replace('ï»¿', '', utf8_encode(file_get_contents($filename)));
+				$this->filecont = str_replace('ï»¿', NULL, utf8_encode(file_get_contents($filename)));
 				
-				//  --('|").*(;|:|\{|\}).*('|")--
 				foreach($this->xCSSvars as $var => $unsafe_char)
 				{
-					$patterns[] = '/(\'|")(.*)('.$unsafe_char.')(.*)(\'|")/';
-					$replacements[] = '$1$2'.$var.'$4$5';
+					$masked_unsafe_char = str_replace('*', '\*', str_replace('/', '\/', $unsafe_char));
+					$patterns[] = '/content(.*:.*(\'|").*)('.$masked_unsafe_char.')(.*(\'|"))/';
+					$replacements[] = 'content$1'.$var.'$4';
 				}
 				
 				$this->filecont = preg_replace($patterns, $replacements, $this->filecont);
 				
-				if(strlen($this->filecont)>1)
+				if(strlen($this->filecont) > 1)
 				{
 					$this->startSplitCont();
 					
@@ -164,7 +175,7 @@ class xCSS
 			}
 			else
 			{
-				die("alert(\"Can't find '".$filename."'\");");
+				die("alert(\"xCSS Parse error: Can't find '".$filename."'\");");
 			}
 		}
 		
@@ -180,10 +191,10 @@ class xCSS
 	private function startSplitCont()
 	{
 		// removes multiple line comments
-		$this->filecont = preg_replace("/\/\*(.*)?\*\//Usi", "", $this->filecont);
+		$this->filecont = preg_replace("/\/\*(.*)?\*\//Usi", NULL, $this->filecont);
 		// removes inline comments, but not :// for http://
 		$this->filecont .= "\n";
-		$this->filecont = preg_replace("/[^:]\/\/.+?\n/", "", $this->filecont);
+		$this->filecont = preg_replace("/[^:]\/\/.+?\n/", NULL, $this->filecont);
 		
 		$this->filecont = $this->changeBraces($this->filecont);
 		
@@ -203,7 +214,7 @@ class xCSS
 					$this->setupVars($codestr);
 					unset($this->filecont[$i]);
 				}
-				else if($keystr != '')
+				else if( ! empty($keystr))
 				{
 					$this->parts[$keystr] = $codestr;
 				}
@@ -274,7 +285,7 @@ class xCSS
 						$p_keys = explode(",\n", $p_keystr);
 						foreach($p_keys as $p_key)
 						{
-							$this->levelparts[$p_key.' extends '.$parent] = '';
+							$this->levelparts[$p_key.' extends '.$parent] = NULL;
 						}
 					}
 				}
@@ -328,7 +339,7 @@ class xCSS
 					{
 						foreach($additional_key as $empty_key)
 						{
-							$temp[$empty_key] = '';
+							$temp[$empty_key] = NULL;
 						}
 					}
 				}
@@ -372,7 +383,7 @@ class xCSS
 				if(count($result[3]) > 1)
 				{
 					unset($this->parts[$keystr]);
-					$keystr = str_replace(' extends '.$result[3][0], '', $keystr);
+					$keystr = str_replace(' extends '.$result[3][0], NULL, $keystr);
 					$keystr .= ' extends '.$result[3][0];
 					$this->parts[$keystr] = $codestr;
 					$this->parseExtends();
@@ -386,7 +397,8 @@ class xCSS
 				if($this->searchForParent($child, $parent))
 				{
 					// if not empty, creat own node with extended code
-					if( ! preg_match("/^(\s+|)$/", $codestr))
+					$codestr = trim($codestr);
+					if( ! empty($codestr))
 					{
 						$this->parts[$child] = $codestr;
 					}
@@ -395,7 +407,8 @@ class xCSS
 				}
 				else
 				{
-					if( ! preg_match("/^(\s+|)$/", $codestr))
+					$codestr = trim($codestr);
+					if( ! empty($codestr))
 					{
 						$this->parts[$child] = $codestr;
 					}
@@ -427,7 +440,7 @@ class xCSS
 							{
 								if(strpos($s_key, $parent) !== FALSE && $parent != $s_key)
 								{
-									$childextra = str_replace($parent, '', $s_key);
+									$childextra = str_replace($parent, NULL, $s_key);
 									
 									if( ! (strpos($childextra, 'extends') !== FALSE))
 									{
@@ -477,7 +490,7 @@ class xCSS
 					list($c_keystr, $c_codestr) = explode('{[', $c_part);
 					$c_keystr = trim($c_keystr);
 
-					if($c_keystr != '')
+					if( ! empty($c_keystr))
 					{
 						$betterKey = NULL;
 						$c_keystr = str_replace(',', ",\n".$keystr, $c_keystr);
@@ -490,7 +503,7 @@ class xCSS
 
 						if(strpos($betterKey, $this->construct) !== FALSE)
 						{
-							$betterKey = str_replace(' '.$this->construct, '', $betterKey);
+							$betterKey = str_replace(' '.$this->construct, NULL, $betterKey);
 						}
 						$this->parts[substr($betterKey,0,-2)] = $c_codestr;
 					}
@@ -507,7 +520,7 @@ class xCSS
 				
 				finds the very outer braces and changes them to {[ code ]}
 			*/
-			$buffer = '';
+			$buffer = NULL;
 			$depth = 0;
 			$for_c = strlen($str);
 			for($i=0; $i < $for_c; $i++)
@@ -572,9 +585,9 @@ class xCSS
 	{
 		foreach($this->parts as $keystr => $codestr)
 		{
-			if( ! preg_match("/^(\s+|)$/", $codestr))
+			$codestr = trim($codestr);
+			if( ! empty($codestr))
 			{
-				$codestr = trim($codestr);
 				if( ! isset($this->css[$keystr]))
 				{
 					$this->css[$keystr] = array();
@@ -608,7 +621,7 @@ class xCSS
 			foreach($this->css as $key => $values)
 			{
 				// feel free to modifie the indentations the way you like it
-				$result .= $key." {\n";
+				$result .= "$key {\n";
 				foreach($values as $key => $value)
 				{
 					$result .= "	$key: $value;\n";
@@ -625,7 +638,7 @@ class xCSS
 	{
 		if($this->debugmode)
 		{
-			echo "/*\nFILENAME:\n".$filename."\nCONTENT:\n".$content."*/\n//------------------------------------\n";
+			$this->xcss_output .= "/*\nFILENAME:\n".$filename."\nCONTENT:\n".$content."*/\n//------------------------------------\n";
 		}
 		else
 		{
@@ -635,7 +648,7 @@ class xCSS
 		if($this->compress)
 		{
 			// let's remove big spaces, tabs and newlines
-			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), '', $content);
+			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), NULL, $content);
 		}
 		
 		$filepath = $this->path_css_dir.$filename;
@@ -649,9 +662,24 @@ class xCSS
 		
 		if( ! is_dir($filepath_dirs))
 		{
-			die("alert(\"No such directory '".$filename."'\");");
+			die("alert(\"xCSS Parse error: No such directory '".$filename."'\");");
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
+	}
+	
+	private function microtime_float()
+	{
+	    list($usec, $sec) = explode(' ', microtime());
+	    return ((float)$usec + (float)$sec);
+	}
+	
+	public function __destruct()
+	{
+		if($this->debugmode)
+		{
+			$time = $this->microtime_float() - $this->xcss_time_start;
+			echo '// Parsed xCSS in: '.round($time, 6).' seconds'."\n//------------------------------------\n".$this->xcss_output;
+		}
 	}
 }

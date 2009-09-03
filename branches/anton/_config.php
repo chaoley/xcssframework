@@ -1,0 +1,32 @@
+<?php defined('XCSSCONFIG') OR die('No direct access allowed.');
+/**
+ * xCSS config
+ */
+
+$config['path_to_css_dir'] = '../../../';			//	default: '../'
+
+$config['xCSS_files'] = array
+(
+	'960.xcss'						=> '960.css',
+	'stresstest_across_files.xcss'	=> 'stresstest_across_files.css',
+	'quickcheck.xcss'				=> 'quickcheck.css',
+);
+
+$config['master_file'] = true;			//	default: 'true'
+$config['master_filename'] = 'master.css';	//	default: 'master.css'
+
+$config['reset_files'] = array
+(
+//	'static/reset.css',
+);
+
+$config['hook_files'] = array
+(
+//	'static/hooks.css: screen',
+);
+
+$config['construct_name'] = 'self';			//	default: 'self'
+
+$config['compress'] = false;				//	default: 'false'
+
+$config['debugmode'] = true;				//	default: 'false'
