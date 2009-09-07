@@ -3,16 +3,15 @@
  * xCSS config
  */
 
-$config['path_to_css_dir'] = '../../../';			//	default: '../'
+$config['path_to_css_dir'] = '../';			//	default: '../'
 
 $config['xCSS_files'] = array
 (
-	'960.xcss'						=> '960.css',
-	'stresstest_across_files.xcss'	=> 'stresstest_across_files.css',
-	'quickcheck.xcss'				=> 'quickcheck.css',
+//	'source/modules.xcss'		=> 'generated/modules.css',
+//	'source/main.xcss'			=> 'generated/main.css',
 );
 
-$config['master_file'] = true;			//	default: 'true'
+$config['master_file'] = true;				//	default: 'true'
 $config['master_filename'] = 'master.css';	//	default: 'master.css'
 
 $config['reset_files'] = array
@@ -25,13 +24,13 @@ $config['hook_files'] = array
 //	'static/hooks.css: screen',
 );
 
-$config['auto_reload_css'] = true;			//	default: 'false'
-$config['reload_after'] = 0.8;				//	in seconds
+$config['auto_reload_css'] = false;			//	default: 'false'
+$config['reload_after'] = 0.5;				//	in secounds
 
 $config['construct_name'] = 'self';			//	default: 'self'
 
 $config['compress'] = false;				//	default: 'false'
 
-$config['debugmode'] = true;				//	default: 'false'
+$config['debugmode'] = false;				//	default: 'false'
 
 $config['disable_xCSS'] = false;			//	default: 'false'
