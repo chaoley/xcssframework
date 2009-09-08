@@ -29,3 +29,5 @@ $config['construct_name'] = 'self';			//	default: 'self'
 $config['compress'] = false;				//	default: 'false'
 
 $config['debugmode'] = false;				//	default: 'false'
+
+$config['disable_xCSS'] = false;			//	default: 'false'
