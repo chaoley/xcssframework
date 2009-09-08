@@ -43,11 +43,6 @@ class xCSS
 	
 	public function __construct(array $cfg)
 	{
-		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
-		{
-			die('alert("xCSS is currently disabled config!");');
-		}
-		
 		$this->levelparts = array();
 		$this->path_css_dir = isset($cfg['path_to_css_dir']) ? $cfg['path_to_css_dir'] : '../';
 		
@@ -96,15 +91,6 @@ class xCSS
 		// this is needed to be able to extend selectors across mulitple xCSS files
 		$this->xCSSfiles = array_reverse($this->xCSSfiles);
 		$this->cssfile = array_reverse($this->cssfile);
-		
-		if(isset($cfg['auto_reload_css']) && $cfg['auto_reload_css'] === TRUE)
-		{
-			$this->debug['reload_css'] = isset($cfg['reload_after']) ? $cfg['reload_after'] : 0.5;
-		}
-		else
-		{
-			$this->debug['reload_css'] = 0;
-		}
 		
 		$this->xCSSvars = array(
 			// unsafe chars will be hidden as vars
@@ -694,34 +680,6 @@ class xCSS
 		{
 			$time = $this->microtime_float() - $this->debug['xcss_time_start'];
 			echo '// Parsed xCSS in: '.round($time, 6).' seconds'."\n//------------------------------------\n".$this->debug['xcss_output'];
-		}
-		
-		if($this->debug['reload_css'] > 0)
-		{
-			$millisecs = $this->debug['reload_css'] * 1000;
-			echo 'function reload_css()
-{
-	var i, x;
-	var head_tag = document.getElementsByTagName("head")[0];
-	var link_tag = document.getElementsByTagName("link");
-	var link_counter = head_tag.getElementsByTagName("link").length;
-	var link_href = Array();
-	
-	for(i = 0; i < link_counter; i++)
-	{
-		link_href[i] = link_tag[i].getAttribute("href");
-	}
-	
-	for(i = 0; i < link_href.length; i++)
-	{
-		x = head_tag.getElementsByTagName("link").length;
-		head_tag.appendChild(document.createElement("link"));
-		link_tag[x].setAttribute("type", "text/css");
-		link_tag[x].setAttribute("rel", "stylesheet");
-		link_tag[x].setAttribute("href", link_href[i]);
-	}
-}
-setTimeout(reload_css, '.$millisecs.');';
 		}
 	}
 }

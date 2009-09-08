@@ -25,9 +25,6 @@ $config['hook_files'] = array
 //	'static/hooks.css: screen',
 );
 
-$config['auto_reload_css'] = true;			//	default: 'false'
-$config['reload_after'] = 0.8;				//	in seconds
-
 $config['construct_name'] = 'self';			//	default: 'self'
 
 $config['compress'] = false;				//	default: 'false'
