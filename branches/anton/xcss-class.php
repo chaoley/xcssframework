@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.4
+ * @version    0.9.5
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -107,17 +107,17 @@ class xCSS
 	private function creatMasterFile(array $reset = array(), array $main = array(), array $hook = array())
 	{
 		$files = array();
-		foreach($reset as $fiel)
+		foreach($reset as $file)
 		{
-			array_push($files, $fiel);
+			array_push($files, $file);
 		}
-		foreach($main as $fiel)
+		foreach($main as $file)
 		{
-			array_push($files, $fiel);
+			array_push($files, $file);
 		}
-		foreach($hook as $fiel)
+		foreach($hook as $file)
 		{
-			array_push($files, $fiel);
+			array_push($files, $file);
 		}
 		
 		$masterFileCont = NULL;
@@ -147,7 +147,7 @@ class xCSS
 				
 				foreach($this->xCSSvars as $var => $unsafe_char)
 				{
-					$masked_unsafe_char = str_replace('*', '\*', str_replace('/', '\/', $unsafe_char));
+					$masked_unsafe_char = str_replace(array('*', '/'), array('\*', '\/'), $unsafe_char));
 					$patterns[] = '/content(.*:.*(\'|").*)('.$masked_unsafe_char.')(.*(\'|"))/';
 					$replacements[] = 'content$1'.$var.'$4';
 				}
@@ -318,7 +318,7 @@ class xCSS
 					$for_c = count($parents);
 					for($i = 1; $i < $for_c; $i++)
 					{
-						array_push($add_keys,$child.' extends '.$parents[$i]);
+						array_push($add_keys, $child.' extends '.$parents[$i]);
 					}
 					
 					$this->parts = $this->addNodeAtOrder($kill_this, $with_this_key, $codestr, $add_keys);
@@ -348,7 +348,6 @@ class xCSS
 					$temp[$keystr] = $codestr;
 				}
 			}
-			
 			return $temp;
 		}
 	
@@ -562,11 +561,11 @@ class xCSS
 	{
 		/*
 			this function brings the CSS nodes in the right order
-			becouse the last value always wins
+			because the last value always wins
 		*/
 		foreach ($this->parts as $keystr => $codestr)
 		{
-			// ok let's fide out who has the most 'extends' in his key
+			// ok let's finde out who has the most 'extends' in his key
 			// the more the higher this node will go
 			$sep_keys = explode(",\n", $keystr);
 			$order[$keystr] = count($sep_keys) * -1;
@@ -630,7 +629,6 @@ class xCSS
 			}
 			$result = preg_replace('/\n+/', "\n", $result);
 		}
-		
 		return $result;
 	}
 	
