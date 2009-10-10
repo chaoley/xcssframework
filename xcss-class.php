@@ -66,18 +66,21 @@ class xCSS
 		}
 		
 		// CSS master file
+		$this->compress_to_master = (isset($cfg['compressed_to_master']) && $cfg['compressed_to_master'] === TRUE);
+		
 		if(isset($cfg['master_file']) && $cfg['master_file'] === TRUE)
 		{
 			$this->mastercssfile = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
 			
-			$reset = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
-			$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
-			$hook = isset($cfg['hook_files']) ? $cfg['hook_files'] : NULL;
+			if( ! $this->compress_to_master)
+			{
+				$reset = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
+				$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
+				$hook = isset($cfg['hook_files']) ? $cfg['hook_files'] : NULL;
 			
-			$this->creatMasterFile($reset, $xcssf, $hook);
+				$this->creatMasterFile($reset, $xcssf, $hook);
+			}
 		}
-		
-		$this->compress_to_master = (isset($cfg['master_file']) && $cfg['master_file'] === TRUE);
 		
 		$this->construct = isset($cfg['construct_name']) ? $cfg['construct_name'] : 'self';
 		
@@ -105,6 +108,8 @@ class xCSS
 			'$__curlybracketopen'		=> '{',
 			'$__curlybracketclosed'		=> '}',
 		);
+		
+		header('Content-type: application/javascript; charset=utf-8');
 	}
 	
 	private function creatMasterFile(array $reset = array(), array $main = array(), array $hook = array())
@@ -187,6 +192,7 @@ class xCSS
 			if($this->compress_to_master)
 			{
 				$compress_output = NULL;
+				asort($this->finalFile);
 				foreach($this->finalFile as $fname => $fcont)
 				{
 					$compress_output .= $this->useVars($fcont);
@@ -652,10 +658,6 @@ class xCSS
 		if($this->debugmode)
 		{
 			$this->debug['xcss_output'] .= "/*\nFILENAME:\n".$filename."\nCONTENT:\n".$content."*/\n//------------------------------------\n";
-		}
-		else
-		{
-			header('Content-type: application/javascript; charset=utf-8');
 		}
 		
 		if($this->compress)
