@@ -116,22 +116,10 @@ class xCSS
 	
 	private function creatMasterFile(array $reset = array(), array $main = array(), array $hook = array())
 	{
-		$files = array();
-		foreach($reset as $file)
-		{
-			array_push($files, $file);
-		}
-		foreach($main as $file)
-		{
-			array_push($files, $file);
-		}
-		foreach($hook as $file)
-		{
-			array_push($files, $file);
-		}
+		$all_files = array_merge($reset, $main, $hook);
 		
 		$masterFileCont = NULL;
-		foreach($files as $file)
+		foreach($all_files as $file)
 		{
 			$file = explode(':', $file);
 			$props = isset($file[1]) ? ' '.trim($file[1]) : NULL;
@@ -603,7 +591,7 @@ class xCSS
 		*/
 		foreach ($this->parts as $keystr => $codestr)
 		{
-			// ok let's finde out who has the most 'extends' in his key
+			// ok let's find out who has the most 'extends' in his key
 			// the more the higher this node will go
 			$sep_keys = explode(",\n", $keystr);
 			$order[$keystr] = count($sep_keys) * -1;
