@@ -3,7 +3,7 @@
  * xCSS config
  */
 
-$config['path_to_css_dir'] = '../../../';			//	default: '../'
+$config['path_to_css_dir'] = '../../../';	//	default: '../'
 
 $config['xCSS_files'] = array
 (
@@ -12,7 +12,8 @@ $config['xCSS_files'] = array
 	'quickcheck.xcss'				=> 'quickcheck.css',
 );
 
-$config['master_file'] = true;			//	default: 'true'
+$config['master_file'] = true;				//	default: 'true'
+$config['compressed_to_master'] = true;		//	default: 'false'
 $config['master_filename'] = 'master.css';	//	default: 'master.css'
 
 $config['reset_files'] = array

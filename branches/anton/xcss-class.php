@@ -17,6 +17,7 @@ class xCSS
 	private $xCSSfile;
 	private $cssfile;
 	private $construct;
+	private $compress_to_master;
 	private $compress;
 	private $debugmode;
 	
@@ -75,6 +76,8 @@ class xCSS
 			
 			$this->creatMasterFile($reset, $xcssf, $hook);
 		}
+		
+		$this->compress_to_master = (isset($cfg['master_file']) && $cfg['master_file'] === TRUE);
 		
 		$this->construct = isset($cfg['construct_name']) ? $cfg['construct_name'] : 'self';
 		
@@ -147,7 +150,7 @@ class xCSS
 				
 				foreach($this->xCSSvars as $var => $unsafe_char)
 				{
-					$masked_unsafe_char = str_replace(array('*', '/'), array('\*', '\/'), $unsafe_char));
+					$masked_unsafe_char = str_replace(array('*', '/'), array('\*', '\/'), $unsafe_char);
 					$patterns[] = '/content(.*:.*(\'|").*)('.$masked_unsafe_char.')(.*(\'|"))/';
 					$replacements[] = 'content$1'.$var.'$4';
 				}
@@ -181,9 +184,21 @@ class xCSS
 		
 		if( ! empty($this->finalFile))
 		{
-			foreach($this->finalFile as $fname => $fcont)
+			if($this->compress_to_master)
 			{
-				$this->creatFile($this->useVars($fcont), $fname);
+				$compress_output = NULL;
+				foreach($this->finalFile as $fname => $fcont)
+				{
+					$compress_output .= $this->useVars($fcont);
+				}
+				$this->creatFile($compress_output, $this->mastercssfile);
+			}
+			else
+			{
+				foreach($this->finalFile as $fname => $fcont)
+				{
+					$this->creatFile($this->useVars($fcont), $fname);
+				}
 			}
 		}
 	}
