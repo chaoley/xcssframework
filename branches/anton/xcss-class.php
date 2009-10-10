@@ -15,6 +15,8 @@ class xCSS
 	private $path_css_dir;
 	private $mastercssfile;
 	private $xCSSfile;
+	private $resetfiles;
+	private $hookfiles;
 	private $cssfile;
 	private $construct;
 	private $compress_to_master;
@@ -66,19 +68,19 @@ class xCSS
 		}
 		
 		// CSS master file
-		$this->compress_to_master = (isset($cfg['compressed_to_master']) && $cfg['compressed_to_master'] === TRUE);
-		
 		if(isset($cfg['master_file']) && $cfg['master_file'] === TRUE)
 		{
 			$this->mastercssfile = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
 			
+			$this->resetfiles = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
+			$this->hookfiles = isset($cfg['hook_files']) ? $cfg['hook_files'] : NULL;
+			
+			$this->compress_to_master = (isset($cfg['compressed_to_master']) && $cfg['compressed_to_master'] === TRUE);
 			if( ! $this->compress_to_master)
 			{
-				$reset = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
 				$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
-				$hook = isset($cfg['hook_files']) ? $cfg['hook_files'] : NULL;
 			
-				$this->creatMasterFile($reset, $xcssf, $hook);
+				$this->creatMasterFile($this->resetfiles, $xcssf, $this->hookfiles);
 			}
 		}
 		
@@ -149,41 +151,34 @@ class xCSS
 			$this->css = NULL;
 			
 			$filename = $this->path_css_dir.$this->xCSSfiles[$i];
-			if(file_exists($filename))
+			$this->filecont = $this->read_file($filename);
+			
+			foreach($this->xCSSvars as $var => $unsafe_char)
 			{
-				$this->filecont = str_replace('ï»¿', NULL, utf8_encode(file_get_contents($filename)));
-				
-				foreach($this->xCSSvars as $var => $unsafe_char)
-				{
-					$masked_unsafe_char = str_replace(array('*', '/'), array('\*', '\/'), $unsafe_char);
-					$patterns[] = '/content(.*:.*(\'|").*)('.$masked_unsafe_char.')(.*(\'|"))/';
-					$replacements[] = 'content$1'.$var.'$4';
-				}
-				
-				$this->filecont = preg_replace($patterns, $replacements, $this->filecont);
-				
-				if(strlen($this->filecont) > 1)
-				{
-					$this->startSplitCont();
-					
-					if( ! empty($this->parts))
-					{
-						$this->parseLevel();
-						
-						$this->manageOrder();
-						
-						if( ! empty($this->levelparts))
-						{
-							$this->manageGlobalExtends();
-						}
-						
-						$this->finalParse($this->cssfile[$i]);
-					}
-				}
+				$masked_unsafe_char = str_replace(array('*', '/'), array('\*', '\/'), $unsafe_char);
+				$patterns[] = '/content(.*:.*(\'|").*)('.$masked_unsafe_char.')(.*(\'|"))/';
+				$replacements[] = 'content$1'.$var.'$4';
 			}
-			else
+			
+			$this->filecont = preg_replace($patterns, $replacements, $this->filecont);
+			
+			if(strlen($this->filecont) > 1)
 			{
-				die("alert(\"xCSS Parse error: Can't find '".$filename."'\");");
+				$this->startSplitCont();
+				
+				if( ! empty($this->parts))
+				{
+					$this->parseLevel();
+					
+					$this->manageOrder();
+					
+					if( ! empty($this->levelparts))
+					{
+						$this->manageGlobalExtends();
+					}
+					
+					$this->finalParse($this->cssfile[$i]);
+				}
 			}
 		}
 		
@@ -192,10 +187,20 @@ class xCSS
 			if($this->compress_to_master)
 			{
 				$compress_output = NULL;
+				foreach($this->resetfiles as $fname)
+				{
+					$fname = explode(':', $fname);
+					$compress_output .= $this->read_file($this->path_css_dir.$fname[0]);
+				}
 				asort($this->finalFile);
-				foreach($this->finalFile as $fname => $fcont)
+				foreach($this->finalFile as $fcont)
 				{
 					$compress_output .= $this->useVars($fcont);
+				}
+				foreach($this->hookfiles as $fname)
+				{
+					$fname = explode(':', $fname);
+					$compress_output .= $this->read_file($this->path_css_dir.$fname[0]);
 				}
 				$this->creatFile($compress_output, $this->mastercssfile);
 			}
@@ -207,6 +212,22 @@ class xCSS
 				}
 			}
 		}
+	}
+	
+	private function read_file($filepath)
+	{
+		$filecontent = NULL;
+		
+		if(file_exists($filepath))
+		{
+			$filecontent = str_replace('ï»¿', NULL, utf8_encode(file_get_contents($filepath)));
+		}
+		else
+		{
+			die("alert(\"xCSS Parse error: Can't find '".$filepath."'\");");
+		}
+		
+		return $filecontent;
 	}
 	
 	private function startSplitCont()
