@@ -142,7 +142,7 @@ class xCSS
 	public function compile()
 	{
 		$for_c = count($this->xCSSfiles);
-		for($i=0; $i < $for_c; $i++)
+		for($i = 0; $i < $for_c; $i++)
 		{
 			$this->parts = NULL;
 			$this->filecont = NULL;
@@ -166,7 +166,7 @@ class xCSS
 				{
 					$this->startSplitCont();
 					
-					if(count($this->parts) > 0)
+					if( ! empty($this->parts))
 					{
 						$this->parseLevel();
 						
@@ -246,7 +246,7 @@ class xCSS
 		private function setupVars($codestr)
 		{
 			$codes = explode(';', $codestr);
-			if(count($codes) > 0)
+			if( ! empty($codes))
 			{
 				foreach($codes as $code)
 				{
@@ -267,11 +267,7 @@ class xCSS
 		
 		private function useVars($cont)
 		{
-			foreach($this->xCSSvars as $varkey => $varcode)
-			{
-				$cont = str_replace($varkey, $varcode, $cont);
-			}
-			return $cont;
+			return strtr($cont, $this->xCSSvars);
 		}
 	
 	private function parseLevel()
@@ -543,9 +539,10 @@ class xCSS
 			$buffer = NULL;
 			$depth = 0;
 			$for_c = strlen($str);
-			for($i=0; $i < $for_c; $i++)
+			for($i = 0; $i < $for_c; $i++)
 			{
 				$char = $str[$i];
+				
 				switch ($char)
 				{
 					case '{':
@@ -564,7 +561,6 @@ class xCSS
 						if ($depth === 0)
 						{
 							$buffer .= ']}';
-							continue;
 						}
 						else
 						{
@@ -613,7 +609,7 @@ class xCSS
 					$this->css[$keystr] = array();
 				}
 				$codes = explode(';', $codestr);
-				if(count($codes) > 0)
+				if( ! empty($codes))
 				{
 					foreach($codes as $code)
 					{

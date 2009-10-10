@@ -12,6 +12,7 @@ $config['xCSS_files'] = array
 );
 
 $config['master_file'] = true;				//	default: 'true'
+$config['compressed_to_master'] = false;	//	default: 'false'
 $config['master_filename'] = 'master.css';	//	default: 'master.css'
 
 $config['reset_files'] = array
