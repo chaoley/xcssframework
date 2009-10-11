@@ -13,7 +13,7 @@ $config['xCSS_files'] = array
 );
 
 $config['use_master_file'] = true;				//	default: 'true'
-$config['compress_output_to_master'] = true;	//	default: 'false'
+$config['insert_output_to_master'] = true;		//	default: 'false'
 $config['master_filename'] = 'master.css';		//	default: 'master.css'
 
 $config['reset_files'] = array
@@ -28,7 +28,7 @@ $config['hook_files'] = array
 
 $config['construct_name'] = 'self';				//	default: 'self'
 
-$config['compress_output'] = false;				//	default: 'false'
+$config['minify_output'] = false;				//	default: 'false'
 
 $config['debugmode'] = true;					//	default: 'false'
 

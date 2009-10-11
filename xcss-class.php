@@ -50,7 +50,7 @@ class xCSS
 		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
-			die("alert(\"xCSS Warning: xCSS was disabled via 'config.php'! Remove the xCSS <script> tag from your HMTL <head> tag\");");
+			die("alert(\"xCSS Warning: xCSS was disabled via 'config.php'! Remove the xCSS <script> tag from your HMTL <head> tag.\");");
 		}
 		
 		$this->levelparts = array();
@@ -75,7 +75,7 @@ class xCSS
 		}
 		
 		// CSS master file
-		$this->compress_output_to_master = (isset($cfg['compress_output_to_master']) && $cfg['compress_output_to_master'] === TRUE);
+		$this->insert_output_to_master = (isset($cfg['insert_output_to_master']) && $cfg['insert_output_to_master'] === TRUE);
 		
 		if(isset($cfg['use_master_file']) && $cfg['use_master_file'] === TRUE)
 		{
@@ -83,7 +83,7 @@ class xCSS
 			$this->reset_files = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
 			$this->hook_files = isset($cfg['hook_files']) ? $cfg['hook_files'] : NULL;
 			
-			if( ! $this->compress_output_to_master)
+			if( ! $this->insert_output_to_master)
 			{
 				$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
 			
@@ -93,7 +93,7 @@ class xCSS
 		
 		$this->construct = isset($cfg['construct_name']) ? $cfg['construct_name'] : 'self';
 		
-		$this->compress_output = isset($cfg['compress_output']) ? $cfg['compress_output'] : FALSE;
+		$this->minify_output = isset($cfg['minify_output']) ? $cfg['minify_output'] : FALSE;
 		
 		$this->debugmode = isset($cfg['debugmode']) ? $cfg['debugmode'] : FALSE;
 		
@@ -177,7 +177,7 @@ class xCSS
 		
 		if( ! empty($this->final_file))
 		{
-			if($this->compress_output_to_master)
+			if($this->insert_output_to_master)
 			{
 				$master_content = NULL;
 				foreach($this->reset_files as $fname)
@@ -217,7 +217,7 @@ class xCSS
 		}
 		else
 		{
-			die("alert(\"xCSS Parse error: Can't find '".$filepath."'\");");
+			die("alert(\"xCSS Parse error: Can't find '".$filepath."'.\");");
 		}
 		
 		return $filecontent;
@@ -649,24 +649,17 @@ class xCSS
 			$this->debug['xcss_output'] .= "/*\nFILENAME:\n".$filename."\nCONTENT:\n".$content."*/\n//------------------------------------\n";
 		}
 		
-		if($this->compress_output)
+		if($this->minify_output)
 		{
 			// let's remove big spaces, tabs and newlines
 			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), NULL, $content);
 		}
 		
 		$filepath = $this->path_css_dir.$filename;
-		$filepath_dirs_arr = explode('/', $filepath);
-		$filepath_dirs = NULL;
-		$for_c = count($filepath_dirs_arr)-1;
-		for($i = 0; $i < $for_c; $i++)
-		{
-			$filepath_dirs .= $filepath_dirs_arr[$i].'/';
-		}
 		
-		if( ! is_dir($filepath_dirs))
+		if( ! is_dir(dirname($filepath)))
 		{
-			die("alert(\"xCSS Parse error: No such directory '".$filename."'\");");
+			die("alert(\"xCSS Parse error: Can't creat '".$filepath."'.\");");
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
