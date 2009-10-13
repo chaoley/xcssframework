@@ -7,8 +7,8 @@ $config['path_to_css_dir'] = '../../../';		//	default: '../'
 
 $config['xCSS_files'] = array
 (
-	'960.xcss'						=> '960.css',
-	'stresstest_across_files.xcss'	=> 'stresstest_across_files.css',
+//	'960.xcss'						=> '960.css',
+//	'stresstest_across_files.xcss'	=> 'stresstest_across_files.css',
 	'quickcheck.xcss'				=> 'quickcheck.css',
 );
 
