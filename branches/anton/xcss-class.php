@@ -241,9 +241,8 @@ class xCSS
 			if( ! empty($part))
 			{
 				list($keystr, $codestr) = explode('{[o#', $part);
-				$keystr = trim($keystr);
 				// adding new line to all (,) in selectors, to be able to find them for 'extends' later
-				$keystr = str_replace(',', ",\n", $keystr);
+				$keystr = str_replace(',', ",\n", trim($keystr));
 				if($keystr == 'vars')
 				{
 					$this->setup_vars($codestr);
