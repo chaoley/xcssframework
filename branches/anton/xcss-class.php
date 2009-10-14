@@ -20,6 +20,7 @@ class xCSS
 	private $css_files;
 	private $construct;
 	private $compress_output_to_master;
+	private $minify_output;
 	private $master_content;
 	private $debugmode;
 	
@@ -163,7 +164,7 @@ class xCSS
 				{
 					$this->parse_level();
 					
-					$this->manage_order();
+					$this->parts = $this->manage_order($this->parts);
 					
 					if( ! empty($this->levelparts))
 					{
@@ -185,7 +186,7 @@ class xCSS
 					$fname = explode(':', $fname);
 					$master_content .= $this->read_file($this->path_css_dir.$fname[0])."\n";
 				}
-				asort($this->final_file);
+				rsort($this->final_file);
 				foreach($this->final_file as $fcont)
 				{
 					$master_content .= $this->use_vars($fcont);
@@ -517,7 +518,7 @@ class xCSS
 			{
 				list($c_keystr, $c_codestr) = explode('{[o#', $c_part);
 				$c_keystr = trim($c_keystr);
-
+				
 				if( ! empty($c_keystr))
 				{
 					$betterKey = NULL;
@@ -571,13 +572,13 @@ class xCSS
 		return $buffer;
 	}
 	
-	private function manage_order()
+	private function manage_order(array $parts)
 	{
 		/*
 			this function brings the CSS nodes in the right order
 			because the last value always wins
 		*/
-		foreach ($this->parts as $keystr => $codestr)
+		foreach ($parts as $keystr => $codestr)
 		{
 			// ok let's find out who has the most 'extends' in his key
 			// the more the higher this node will go
@@ -588,10 +589,10 @@ class xCSS
 		foreach ($order as $keystr => $order_nr)
 		{
 			// with the sorted order we can now redeclare the values
-			$sorted[$keystr] = $this->parts[$keystr];
+			$sorted[$keystr] = $parts[$keystr];
 		}
 		// and give it back
-		$this->parts = $sorted;
+		return $sorted;
 	}
 	
 	private function final_parse($filename)
