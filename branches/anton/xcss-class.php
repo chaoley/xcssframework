@@ -218,7 +218,7 @@ class xCSS
 		}
 		else
 		{
-			die("alert(\"xCSS Parse error: Can't find '".$filepath."'.\");");
+			die("alert(\"xCSS Parse error: Cannot find '".$filepath."'.\");");
 		}
 		
 		return $filecontent;
@@ -665,7 +665,7 @@ class xCSS
 		
 		if( ! is_writable($filepath))
 		{
-			die("alert(\"xCSS Parse error: Can't creat '".$filepath."'.\");");
+			die("alert(\"xCSS Parse error: Cannot write to the output file '".$filepath."'.\");");
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));

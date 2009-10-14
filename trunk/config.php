@@ -3,7 +3,7 @@
  * xCSS config
  */
 
-$config['path_to_css_dir'] = '../';			//	default: '../'
+$config['path_to_css_dir'] = '../';				//	default: '../'
 
 $config['xCSS_files'] = array
 (
@@ -11,8 +11,9 @@ $config['xCSS_files'] = array
 //	'source/main.xcss'			=> 'generated/main.css',
 );
 
-$config['master_file'] = true;				//	default: 'true'
-$config['master_filename'] = 'master.css';	//	default: 'master.css'
+$config['use_master_file'] = true;				//	default: 'true'
+$config['compress_output_to_master'] = false;	//	default: 'false'
+$config['master_filename'] = 'master.css';		//	default: 'master.css'
 
 $config['reset_files'] = array
 (
@@ -24,10 +25,10 @@ $config['hook_files'] = array
 //	'static/hooks.css: screen',
 );
 
-$config['construct_name'] = 'self';			//	default: 'self'
+$config['construct_name'] = 'self';				//	default: 'self'
 
-$config['compress'] = false;				//	default: 'false'
+$config['minify_output'] = false;				//	default: 'false'
 
-$config['debugmode'] = false;				//	default: 'false'
+$config['debugmode'] = false;					//	default: 'false'
 
-$config['disable_xCSS'] = false;			//	default: 'false'
+$config['disable_xCSS'] = false;				//	default: 'false'
