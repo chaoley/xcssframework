@@ -27,7 +27,7 @@ $config['hook_files'] = array
 
 $config['construct_name'] = 'self';				//	default: 'self'
 
-$config['minifycompress__output'] = false;				//	default: 'false'
+$config['minify_output'] = false;				//	default: 'false'
 
 $config['debugmode'] = false;					//	default: 'false'
 
