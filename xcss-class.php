@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.5
+ * @version    0.9.5.1
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -347,7 +347,7 @@ class xCSS
 					
 					$add_keys = array();
 					$for_c = count($parents);
-					for($i = 1; $icompress_ < $for_c; $i++)
+					for($i = 1; $i < $for_c; $i++)
 					{
 						array_push($add_keys, $child.' extends '.$parents[$i]);
 					}
