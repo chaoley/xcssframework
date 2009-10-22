@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.5
+ * @version    0.9.6
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -51,7 +51,7 @@ class xCSS
 		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
-			die("alert(\"xCSS Warning: xCSS was disabled via 'config.php'! Remove the xCSS <script> tag from your HMTL <head> tag.\");");
+			$this->exception_handler('xcss_disabled', 'xCSS was disabled via "config.php"! Remove the xCSS <script> tag from your HMTL <head> tag');
 		}
 		
 		$this->levelparts = array();
@@ -218,7 +218,7 @@ class xCSS
 		}
 		else
 		{
-			die("alert(\"xCSS Parse error: Cannot find '".$filepath."'.\");");
+			$this->exception_handler('xcss_file_does_not_exist', 'Cannot find "'.$filepath.'"');
 		}
 		
 		return $filecontent;
@@ -294,6 +294,12 @@ class xCSS
 		$this->parse_childs();
 	}
 	
+	private function regex_extend($keystr)
+	{
+		preg_match_all('/((\S|\s)+?)extends((\S|\s|\n)[^,]+)/', $keystr, $result);
+		return $result;
+	}
+	
 	private function manage_global_extends()
 	{
 		// helps to find all the extenders of the global extended selector
@@ -302,7 +308,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$child = trim($result[1][0]);
 				$parent = trim($result[3][0]);
@@ -333,7 +339,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -347,7 +353,7 @@ class xCSS
 					
 					$add_keys = array();
 					$for_c = count($parents);
-					for($i = 1; $icompress_ < $for_c; $i++)
+					for($i = 1; $i < $for_c; $i++)
 					{
 						array_push($add_keys, $child.' extends '.$parents[$i]);
 					}
@@ -391,7 +397,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -409,7 +415,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				if(count($result[3]) > 1)
 				{
 					unset($this->parts[$keystr]);
@@ -661,14 +667,40 @@ class xCSS
 			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), NULL, $content);
 		}
 		
-		$filepath = $this->path_css_dir.$filename;
+		$filepath = $this->path_css_dir . $filename;
 		
 		if( ! is_writable($filepath))
 		{
-			die("alert(\"xCSS Parse error: Cannot write to the output file '".$filepath."'.\");");
+			$this->exception_handler('css_dir_unwritable', 'Cannot write to the output file "'.$filepath.'"');
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
+	}
+	
+	public function exception_handler($exception, $message = NULL, $file = NULL, $line = NULL)
+	{
+		switch ($exception)
+		{
+			case E_USER_ERROR:
+			case E_USER_WARNING:
+			case E_USER_NOTICE:
+				echo $exception.' '.$message."\n";
+				exit(1);
+			break;
+			
+			case 'xcss_file_does_not_exist':
+			case 'xcss_disabled':
+			case 'css_dir_unwritable':
+				echo 'alert("xCSS sParse error: '.$message.'");'."\n";
+				exit(1);
+			break;
+			
+			default:
+				echo 'alert("xCSS Parse error: check the syntax of your xCSS files");'."\n";
+				exit(1);
+			break;
+		}
+		return true;
 	}
 	
 	private function microtime_float()
@@ -686,3 +718,5 @@ class xCSS
 		}
 	}
 }
+
+set_error_handler(array('xCSS', 'exception_handler'));
