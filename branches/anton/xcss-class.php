@@ -694,13 +694,6 @@ class xCSS
 		
 		switch ($exception)
 		{
-			case E_USER_ERROR:
-			case E_USER_WARNING:
-			case E_USER_NOTICE:
-				echo $exception.' '.$message."\n";
-				exit(1);
-			break;
-			
 			case 'xcss_file_does_not_exist':
 			case 'xcss_disabled':
 			case 'css_file_unwritable':
