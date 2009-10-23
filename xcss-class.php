@@ -674,12 +674,12 @@ class xCSS
 		
 		if( ! file_exists($filepath) && (is_dir($this->path_css_dir) || ! fopen($filepath, 'w')))
 		{
-			$this->exception_handler('css_file_unwritable', 'cannot create output file "'.$filepath.'"');
+			$this->exception_handler('css_dir_unwritable', 'cannot create output file "'.$filepath.'"');
 		}
 		
 		if( ! is_writable($filepath))
 		{
-			$this->exception_handler('css_dir_unwritable', 'cannot write to the output file "'.$filepath.'"');
+			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'"');
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
