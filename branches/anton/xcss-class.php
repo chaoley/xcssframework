@@ -80,7 +80,7 @@ class xCSS
 		// CSS master file
 		$this->compress_output_to_master = (isset($cfg['compress_output_to_master']) && $cfg['compress_output_to_master'] === TRUE);
 		
-		if(isset($cfg['use_master_file']) && $cfg['use_master_file'] === TRUE)
+		if($this->compress_output_to_master || (isset($cfg['use_master_file']) && $cfg['use_master_file'] === TRUE))
 		{
 			$this->master_file = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
 			$this->reset_files = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
@@ -305,7 +305,6 @@ class xCSS
 	private function manage_global_extends()
 	{
 		// helps to find all the extenders of the global extended selector
-		
 		foreach($this->levelparts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
@@ -334,9 +333,9 @@ class xCSS
 	
 	private function manageMultipleExtends()
 	{
-		//	To be able to manage multiple extends, you need to
-		//	destroy the actual node and creat many nodes that have
-		//	mono extend. the first one gets all the css rules
+		// To be able to manage multiple extends, you need to
+		// destroy the actual node and creat many nodes that have
+		// mono extend. the first one gets all the css rules
 		foreach($this->parts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
@@ -672,14 +671,14 @@ class xCSS
 		
 		$filepath = $this->path_css_dir . $filename;
 		
-		if( ! file_exists($filepath) && (is_dir($this->path_css_dir) || ! fopen($filepath, 'w')))
+		if( ! file_exists($filepath) && (is_dir($this->path_css_dir) && ! fopen($filepath, 'w')))
 		{
 			$this->exception_handler('css_dir_unwritable', 'cannot create output file "'.$filepath.'"');
 		}
 		
-		if( ! is_writable($filepath))
+		if( ! is_writable($filepath) && ! chmod($filepath, 0750))
 		{
-			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'"');
+			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check the "');
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
