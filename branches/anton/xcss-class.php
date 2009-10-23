@@ -678,7 +678,7 @@ class xCSS
 		
 		if( ! is_writable($filepath) && ! chmod($filepath, 0750))
 		{
-			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check the "');
+			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check CHMOD permissions"');
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
