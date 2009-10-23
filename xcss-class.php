@@ -216,7 +216,7 @@ class xCSS
 		
 		if(file_exists($filepath))
 		{
-			$filecontent = str_replace('Ã¯Â»Â¿', NULL, utf8_encode(file_get_contents($filepath)));
+			$filecontent = str_replace('ï»¿', NULL, utf8_encode(file_get_contents($filepath)));
 		}
 		else
 		{
