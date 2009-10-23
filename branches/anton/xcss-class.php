@@ -47,6 +47,8 @@ class xCSS
 	
 	public function __construct(array $cfg)
 	{
+		set_error_handler(array('xCSS', 'exception_handler'));
+		
 		header('Content-type: application/javascript; charset=utf-8');
 		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
@@ -214,7 +216,7 @@ class xCSS
 		
 		if(file_exists($filepath))
 		{
-			$filecontent = str_replace('ï»¿', NULL, utf8_encode(file_get_contents($filepath)));
+			$filecontent = str_replace('Ã¯Â»Â¿', NULL, utf8_encode(file_get_contents($filepath)));
 		}
 		else
 		{
@@ -664,14 +666,20 @@ class xCSS
 		if($this->minify_output)
 		{
 			// let's remove big spaces, tabs and newlines
-			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), NULL, $content);
+			$content = str_replace(array("\n ", "\n", "\t", '  ', '   '), NULL, $content);
+			$content = str_replace(array(' {', ';}', ': '), array('{', '}', ':'), $content);
 		}
 		
 		$filepath = $this->path_css_dir . $filename;
 		
+		if( ! file_exists($filepath) && (is_dir($this->path_css_dir) || ! fopen($filepath, 'w')))
+		{
+			$this->exception_handler('css_file_unwritable', 'cannot create output file "'.$filepath.'"');
+		}
+		
 		if( ! is_writable($filepath))
 		{
-			$this->exception_handler('css_dir_unwritable', 'Cannot write to the output file "'.$filepath.'"');
+			$this->exception_handler('css_dir_unwritable', 'cannot write to the output file "'.$filepath.'"');
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
@@ -679,6 +687,11 @@ class xCSS
 	
 	public function exception_handler($exception, $message = NULL, $file = NULL, $line = NULL)
 	{
+		if($this->debugmode)
+		{
+			echo "// Error: '$exception' in file '$file' on line: '$line'\n//\t- $message\n\n";
+		}
+		
 		switch ($exception)
 		{
 			case E_USER_ERROR:
@@ -690,8 +703,9 @@ class xCSS
 			
 			case 'xcss_file_does_not_exist':
 			case 'xcss_disabled':
+			case 'css_file_unwritable':
 			case 'css_dir_unwritable':
-				echo 'alert("xCSS sParse error: '.$message.'");'."\n";
+				echo 'alert("xCSS Parse error: '.addslashes($message).'");'."\n";
 				exit(1);
 			break;
 			
@@ -700,7 +714,7 @@ class xCSS
 				exit(1);
 			break;
 		}
-		return true;
+		return TRUE;
 	}
 	
 	private function microtime_float()
@@ -718,5 +732,3 @@ class xCSS
 		}
 	}
 }
-
-set_error_handler(array('xCSS', 'exception_handler'));
