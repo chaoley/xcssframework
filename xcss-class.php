@@ -48,7 +48,7 @@ class xCSS
 	public function __construct(array $cfg)
 	{
 		set_error_handler(array('xCSS', 'exception_handler'));
-		error_reporting(E_ALL & ~E_STRICT);
+		error_reporting(E_ALL);
 		
 		header('Content-type: application/javascript; charset=utf-8');
 		
@@ -139,8 +139,8 @@ class xCSS
 	
 	public function compile()
 	{
-		$for_c = count($this->xcss_files);
-		for($i = 0; $i < $for_c; $i++)
+		$count_xcss_files = count($this->xcss_files);
+		for($i = 0; $i < $count_xcss_files; $i++)
 		{
 			$this->parts = NULL;
 			$this->filecont = NULL;
@@ -331,6 +331,7 @@ class xCSS
 		// removes inline comments, but not :// for http://
 		$this->filecont .= "\n";
 		$this->filecont = preg_replace("/[^:]\/\/.+/", NULL, $this->filecont);
+		$this->filecont = str_replace(array('	extends', 'extends	'), array(' extends', 'extends '), $this->filecont);
 		
 		$this->filecont = $this->change_braces($this->filecont);
 		
@@ -344,7 +345,7 @@ class xCSS
 				list($keystr, $codestr) = explode('{[o#', $part);
 				// adding new line to all (,) in selectors, to be able to find them for 'extends' later
 				$keystr = str_replace(',', ",\n", trim($keystr));
-				if($keystr == 'vars')
+				if($keystr === 'vars')
 				{
 					$this->setup_vars($codestr);
 					unset($this->filecont[$i]);
@@ -394,15 +395,20 @@ class xCSS
 		$this->parse_childs();
 	}
 	
+	private function regex_extend($keystr)
+	{
+		preg_match_all('/((\S|\s)+?) extends ((\S|\s|\n)[^,]+)/', $keystr, $result);
+		return $result;
+	}
+	
 	private function manage_global_extends()
 	{
 		// helps to find all the extenders of the global extended selector
-		
 		foreach($this->levelparts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$child = trim($result[1][0]);
 				$parent = trim($result[3][0]);
@@ -426,14 +432,14 @@ class xCSS
 	
 	private function manageMultipleExtends()
 	{
-		//	To be able to manage multiple extends, you need to
-		//	destroy the actual node and creat many nodes that have
-		//	mono extend. the first one gets all the css rules
+		// To be able to manage multiple extends, you need to
+		// destroy the actual node and creat many nodes that have
+		// mono extend. the first one gets all the css rules
 		foreach($this->parts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -446,8 +452,8 @@ class xCSS
 					$with_this_key = $child.' extends '.$parents[0];
 					
 					$add_keys = array();
-					$for_c = count($parents);
-					for($i = 1; $i < $for_c; $i++)
+					$count_parents = count($parents);
+					for($i = 1; $i < $count_parents; $i++)
 					{
 						array_push($add_keys, $child.' extends '.$parents[$i]);
 					}
@@ -462,7 +468,7 @@ class xCSS
 	{
 		foreach($this->parts as $keystr => $codestr)
 		{
-			if($keystr == $kill_this)
+			if($keystr === $kill_this)
 			{
 				$temp[$with_this_key] = $and_this_value;
 				
@@ -491,7 +497,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -509,7 +515,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				if(count($result[3]) > 1)
 				{
 					unset($this->parts[$keystr]);
@@ -557,7 +563,7 @@ class xCSS
 			$sep_keys = explode(",\n", $keystr);
 			foreach ($sep_keys as $s_key)
 			{
-				if($parent == $s_key)
+				if($parent === $s_key)
 				{
 					$this->parts = $this->add_node_at_order($keystr, $child.",\n".$keystr, $codestr);
 					
@@ -567,7 +573,7 @@ class xCSS
 						$sep_keys = explode(",\n", $keystr);
 						foreach ($sep_keys as $s_key)
 						{
-							if($parent != $s_key && strpos($s_key, $parent) !== FALSE)
+							if($parent !== $s_key && strpos($s_key, $parent) !== FALSE)
 							{
 								$childextra = str_replace($parent, $child, $s_key);
 								
@@ -651,8 +657,8 @@ class xCSS
 		*/
 		$buffer = NULL;
 		$depth = 0;
-		$for_c = strlen($str);
-		for($i = 0; $i < $for_c; $i++)
+		$strlen_str = strlen($str);
+		for($i = 0; $i < $strlen_str; $i++)
 		{
 			$char = $str[$i];
 			switch ($char)
@@ -660,11 +666,11 @@ class xCSS
 				case '{':
 					$depth++;
 					$buffer .= ($depth === 1) ? '{[o#' : $char;
-					break;
+				break;
 				case '}':
 					$depth--;
 					$buffer .= ($depth === 0) ? '#c]}' : $char;
-					break;
+				break;
 				default:
 					$buffer .= $char;
 			}
