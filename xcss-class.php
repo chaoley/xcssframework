@@ -283,7 +283,7 @@ class xCSS
 						if($all_units_count < $this_unit_count)
 						{
 							$new_unit = $units[$x];
-							$counter = $this_unit_count;
+							$all_units_count = $this_unit_count;
 						}
 					}
 					if($all_units_count === 0)
@@ -295,7 +295,12 @@ class xCSS
 				$better_math_string = $this->calc_string($better_math_string) . $new_unit;
 			}
 			
-			$content = str_replace('['.$result[1][$i].']', $better_math_string, $content);
+			$content = str_replace(array('##', '['.$result[1][$i].']'), array('#', $better_math_string), $content);
+		}
+		
+		if(preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result) > 0)
+		{
+			$content = $this->do_math($content);
 		}
 		
 		return $content;
