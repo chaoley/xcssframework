@@ -224,8 +224,8 @@ class xCSS
 		$units_count = count($units);
 		
 		preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result);
-		$for_c = count($result[1]);
-		for($i = 0; $i < $for_c; $i++)
+		$count_results = count($result[1]);
+		for($i = 0; $i < $count_results; $i++)
 		{
 			$better_math_str = $result[1][$i];
 			if(strpos($better_math_str, '#') !== FALSE)
@@ -234,27 +234,29 @@ class xCSS
 				for($y = 0; $y < count($colors[1]); $y++)
 				{
 					$color = $colors[1][$y];
-				    if(strlen($color) === 6)
+					if(strlen($color) === 6)
 					{
 						$r = $color[0].$color[1];
 						$g = $color[2].$color[3];
 						$b = $color[4].$color[5];
 					}
-					else if(strlen($color) === 3)
+					else
 					{
 						$r = $color[0].$color[0];
 						$g = $color[1].$color[1];
 						$b = $color[2].$color[2];
 					}
 					
-					if($y === 0){
+					if($y === 0)
+					{
 						$rgb = array(
 							str_replace('#'.$color, '0x'.$r, $better_math_str),
 							str_replace('#'.$color, '0x'.$g, $better_math_str),
 							str_replace('#'.$color, '0x'.$b, $better_math_str),
 						);
 					}
-					else{
+					else
+					{
 						$rgb = array(
 							str_replace('#'.$color, '0x'.$r, $rgb[0]),
 							str_replace('#'.$color, '0x'.$g, $rgb[1]),
@@ -264,17 +266,17 @@ class xCSS
 				}
 				$better_math_str = '#';
 				$c = $this->calc_string($rgb[0]);
-				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, 0, STR_PAD_LEFT);
 				$c = $this->calc_string($rgb[1]);
-				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, 0, STR_PAD_LEFT);
 				$c = $this->calc_string($rgb[2]);
-				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, 0, STR_PAD_LEFT);
 			}
 			else
 			{
 				$better_math_str = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $result[1][$i]);
 				$new_unit = NULL;
-				if($result[2][$i] == ';' || $result[2][$i] == ' ')
+				if($result[2][$i] === ';' || $result[2][$i] === ' ')
 				{
 					$all_units_count = 0;
 					for($x = 0; $x < $units_count; $x++)
@@ -298,7 +300,7 @@ class xCSS
 			$content = str_replace(array('#['.$result[1][$i].']', '['.$result[1][$i].']'), $better_math_str, $content);
 		}
 		
-		if(preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result) > 0)
+		if($count_results > 0 && preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result) > 0)
 		{
 			$content = $this->do_math($content);
 		}
@@ -767,14 +769,19 @@ class xCSS
 		
 		$filepath = $this->path_css_dir . $filename;
 		
-		if( ! file_exists($filepath) && (is_dir($this->path_css_dir) && ! fopen($filepath, 'w')))
+		if( ! file_exists($filepath))
 		{
-			$this->exception_handler('css_dir_unwritable', 'cannot create output file "'.$filepath.'"');
-		}
-		
-		if( ! is_writable($filepath) && ! chmod($filepath, 0750))
-		{
-			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check CHMOD permissions"');
+			if(is_dir(dirname($filepath)))
+			{
+				if( ! fopen($filepath, 'w'))
+				{
+					$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check CHMOD permissions"');
+				}
+			}
+			else
+			{
+				$this->exception_handler('css_dir_unwritable', 'no such directory "'.dirname($filepath).'"');
+			}
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
