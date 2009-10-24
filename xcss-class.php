@@ -394,20 +394,15 @@ class xCSS
 		$this->parse_childs();
 	}
 	
-	private function regex_extend($keystr)
-	{
-		preg_match_all('/((\S|\s)+?)extends((\S|\s|\n)[^,]+)/', $keystr, $result);
-		return $result;
-	}
-	
 	private function manage_global_extends()
 	{
 		// helps to find all the extenders of the global extended selector
+		
 		foreach($this->levelparts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				$result = $this->regex_extend($keystr);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
 				
 				$child = trim($result[1][0]);
 				$parent = trim($result[3][0]);
@@ -431,14 +426,14 @@ class xCSS
 	
 	private function manageMultipleExtends()
 	{
-		// To be able to manage multiple extends, you need to
-		// destroy the actual node and creat many nodes that have
-		// mono extend. the first one gets all the css rules
+		//	To be able to manage multiple extends, you need to
+		//	destroy the actual node and creat many nodes that have
+		//	mono extend. the first one gets all the css rules
 		foreach($this->parts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				$result = $this->regex_extend($keystr);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -496,7 +491,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				$result = $this->regex_extend($keystr);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -514,7 +509,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				$result = $this->regex_extend($keystr);
+				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
 				if(count($result[3]) > 1)
 				{
 					unset($this->parts[$keystr]);
