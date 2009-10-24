@@ -227,10 +227,10 @@ class xCSS
 		$for_c = count($result[1]);
 		for($i = 0; $i < $for_c; $i++)
 		{
-			$better_math_string = $result[1][$i];
-			if(strpos($better_math_string, '#') !== FALSE)
+			$better_math_str = $result[1][$i];
+			if(strpos($better_math_str, '#') !== FALSE)
 			{
-		        preg_match_all('/#(\w{6}|\w{3})/', $better_math_string, $colors);
+		        preg_match_all('/#(\w{6}|\w{3})/', $better_math_str, $colors);
 				for($y = 0; $y < count($colors[1]); $y++)
 				{
 					$color = $colors[1][$y];
@@ -249,9 +249,9 @@ class xCSS
 					
 					if($y === 0){
 						$rgb = array(
-							str_replace('#'.$color, '0x'.$r, $better_math_string),
-							str_replace('#'.$color, '0x'.$g, $better_math_string),
-							str_replace('#'.$color, '0x'.$b, $better_math_string),
+							str_replace('#'.$color, '0x'.$r, $better_math_str),
+							str_replace('#'.$color, '0x'.$g, $better_math_str),
+							str_replace('#'.$color, '0x'.$b, $better_math_str),
 						);
 					}
 					else{
@@ -262,17 +262,17 @@ class xCSS
 						);
 					}
 				}
-				$better_math_string = '#';
+				$better_math_str = '#';
 				$c = $this->calc_string($rgb[0]);
-				$better_math_string .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
 				$c = $this->calc_string($rgb[1]);
-				$better_math_string .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
 				$c = $this->calc_string($rgb[2]);
-				$better_math_string .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
 			}
 			else
 			{
-				$better_math_string = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $result[1][$i]);
+				$better_math_str = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $result[1][$i]);
 				$new_unit = NULL;
 				if($result[2][$i] == ';' || $result[2][$i] == ' ')
 				{
@@ -292,10 +292,10 @@ class xCSS
 					}
 				}
 				
-				$better_math_string = $this->calc_string($better_math_string) . $new_unit;
+				$better_math_str = $this->calc_string($better_math_str) . $new_unit;
 			}
 			
-			$content = str_replace(array('##', '['.$result[1][$i].']'), array('#', $better_math_string), $content);
+			$content = str_replace(array('#['.$result[1][$i].']', '['.$result[1][$i].']'), $better_math_str, $content);
 		}
 		
 		if(preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result) > 0)
