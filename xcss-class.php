@@ -48,6 +48,7 @@ class xCSS
 	public function __construct(array $cfg)
 	{
 		set_error_handler(array('xCSS', 'exception_handler'));
+		error_reporting(E_ALL & ~E_STRICT);
 		
 		header('Content-type: application/javascript; charset=utf-8');
 		
@@ -89,7 +90,6 @@ class xCSS
 			if( ! $this->compress_output_to_master)
 			{
 				$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
-			
 				$this->creat_master_file($this->reset_files, $xcssf, $this->hook_files);
 			}
 		}
@@ -198,16 +198,107 @@ class xCSS
 					$fname = explode(':', $fname);
 					$master_content .= $this->read_file($this->path_css_dir.$fname[0]);
 				}
+				$master_content = $this->do_math($master_content);
 				$this->creat_file($master_content, $this->master_file);
 			}
 			else
 			{
 				foreach($this->final_file as $fname => $fcont)
 				{
-					$this->creat_file($this->use_vars($fcont), $fname)."\n";
+					$fcont = $this->do_math($this->use_vars($fcont));
+					$this->creat_file($fcont, $fname)."\n";
 				}
 			}
 		}
+	}
+	
+	private function calc_string($math)
+	{
+		$calc = create_function(NULL, 'return '.$math.';');
+		return $calc();
+	}
+	
+	private function do_math($content)
+	{
+		$units = array('em', 'px', 'pt', 'cm', 'mm', '%');
+		$units_count = count($units);
+		
+		preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result);
+		$for_c = count($result[1]);
+		for($i = 0; $i < $for_c; $i++)
+		{
+			$better_math_string = $result[1][$i];
+			if(strpos($better_math_string, '#') !== FALSE)
+			{
+		        preg_match_all('/#(\w{6}|\w{3})/', $better_math_string, $colors);
+				for($y = 0; $y < count($colors[1]); $y++)
+				{
+					$color = $colors[1][$y];
+				    if(strlen($color) === 6)
+					{
+						$r = $color[0].$color[1];
+						$g = $color[2].$color[3];
+						$b = $color[4].$color[5];
+					}
+					else if(strlen($color) === 3)
+					{
+						$r = $color[0].$color[0];
+						$g = $color[1].$color[1];
+						$b = $color[2].$color[2];
+					}
+					
+					if($y === 0){
+						$rgb = array(
+							str_replace('#'.$color, '0x'.$r, $better_math_string),
+							str_replace('#'.$color, '0x'.$g, $better_math_string),
+							str_replace('#'.$color, '0x'.$b, $better_math_string),
+						);
+					}
+					else{
+						$rgb = array(
+							str_replace('#'.$color, '0x'.$r, $rgb[0]),
+							str_replace('#'.$color, '0x'.$g, $rgb[1]),
+							str_replace('#'.$color, '0x'.$b, $rgb[2]),
+						);
+					}
+				}
+				$better_math_string = '#';
+				$c = $this->calc_string($rgb[0]);
+				$better_math_string .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$c = $this->calc_string($rgb[1]);
+				$better_math_string .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+				$c = $this->calc_string($rgb[2]);
+				$better_math_string .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, '0', STR_PAD_LEFT);
+			}
+			else
+			{
+				$better_math_string = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $result[1][$i]);
+				$new_unit = NULL;
+				if($result[2][$i] == ';' || $result[2][$i] == ' ')
+				{
+					$all_units_count = 0;
+					for($x = 0; $x < $units_count; $x++)
+					{
+						$this_unit_count = count(explode($units[$x], $result[1][$i]))-1;
+						if($all_units_count < $this_unit_count)
+						{
+							$new_unit = $units[$x];
+							$counter = $this_unit_count;
+						}
+					}
+					if($all_units_count === 0)
+					{
+						$new_unit = 'px';
+					}
+				}
+				
+				$better_math_string = $this->calc_string($better_math_string) . $new_unit;
+			}
+			
+			$content = str_replace('['.$result[1][$i].']', $better_math_string, $content);
+		}
+		
+		return $content;
 	}
 	
 	private function read_file($filepath)
@@ -232,7 +323,7 @@ class xCSS
 		$this->filecont = preg_replace("/\/\*(.*)?\*\//Usi", NULL, $this->filecont);
 		// removes inline comments, but not :// for http://
 		$this->filecont .= "\n";
-		$this->filecont = preg_replace("/[^:]\/\/.+?\n/", NULL, $this->filecont);
+		$this->filecont = preg_replace("/[^:]\/\/.+/", NULL, $this->filecont);
 		
 		$this->filecont = $this->change_braces($this->filecont);
 		
@@ -691,8 +782,17 @@ class xCSS
 			echo "// Error: '$exception' in file '$file' on line: '$line'\n//\t- $message\n\n";
 		}
 		
+		if(strpos($message, 'create_function') !== FALSE)
+		{
+			$exception = 'xcss_math_error';
+		}
+		
 		switch ($exception)
 		{
+			case 'xcss_math_error':
+				echo 'alert("xCSS Parse error: unable to solve the math operation");'."\n";
+				exit(1);
+			break;
 			case 'xcss_file_does_not_exist':
 			case 'xcss_disabled':
 			case 'css_file_unwritable':
