@@ -32,7 +32,7 @@ class xCSS
 	
 	// nodes that will be extended some level later
 	public $levelparts;
-
+	
 	// final css nodes as an array
 	public $css;
 	
@@ -68,10 +68,10 @@ class xCSS
 			{
 				if(strpos($xcss_file, '*') !== FALSE)
 				{
-                	$xcss_dir = glob($this->path_css_dir . $xcss_file);
-	                foreach($xcss_dir as $glob_xcss_file)
-	                {
-                        $glob_xcss_file = str_replace($this->path_css_dir, NULL, $glob_xcss_file);
+					$xcss_dir = glob($this->path_css_dir . $xcss_file);
+					foreach($xcss_dir as $glob_xcss_file)
+					{
+						$glob_xcss_file = str_replace($this->path_css_dir, NULL, $glob_xcss_file);
 						array_push($this->xcss_files, $glob_xcss_file);
 						
 						$glob_css_file = dirname($css_file).'/'.basename(str_replace('.xcss', '.css', $glob_xcss_file));
@@ -249,7 +249,7 @@ class xCSS
 			$better_math_str = $result[1][$i];
 			if(strpos($better_math_str, '#') !== FALSE)
 			{
-		        preg_match_all('/#(\w{6}|\w{3})/', $better_math_str, $colors);
+				preg_match_all('/#(\w{6}|\w{3})/', $better_math_str, $colors);
 				for($y = 0; $y < count($colors[1]); $y++)
 				{
 					$color = $colors[1][$y];
@@ -654,7 +654,7 @@ class xCSS
 					{
 						$better_key .= trim($s_key).' '.$c_keystr.",\n";
 					}
-
+					
 					if(strpos($better_key, $this->construct) !== FALSE)
 					{
 						$better_key = str_replace(' '.$this->construct, NULL, $better_key);
@@ -851,8 +851,8 @@ class xCSS
 	
 	public function microtime_float()
 	{
-	    list($usec, $sec) = explode(' ', microtime());
-	    return ((float)$usec + (float)$sec);
+		list($usec, $sec) = explode(' ', microtime());
+		return ((float)$usec + (float)$sec);
 	}
 	
 	public function __destruct()
