@@ -64,12 +64,31 @@ class xCSS
 		{
 			$this->xcss_files = array();
 			$this->css_files = array();
-			foreach($cfg['xCSS_files'] as $xcss_files => $css_file)
+			foreach($cfg['xCSS_files'] as $xcss_file => $css_file)
 			{
-				array_push($this->xcss_files, $xcss_files);
-				// get rid of the media properties
-				$file = explode(':', $css_file);
-				array_push($this->css_files, trim($file[0]));
+				if(strpos($xcss_file, '*') !== FALSE)
+				{
+                	$xcss_dir = glob($this->path_css_dir . $xcss_file);
+	                foreach($xcss_dir as $glob_xcss_file)
+	                {
+                        $glob_xcss_file = str_replace($this->path_css_dir, NULL, $glob_xcss_file);
+						array_push($this->xcss_files, $glob_xcss_file);
+						
+						$glob_css_file = dirname($css_file).'/'.basename(str_replace('.xcss', '.css', $glob_xcss_file));
+						// get rid of the media properties
+						$file = explode(':', $glob_css_file);
+						array_push($this->css_files, trim($file[0]));
+						$cfg['xCSS_files'][$glob_xcss_file] = $glob_css_file;
+					}
+					unset($cfg['xCSS_files'][$xcss_file]);
+				}
+				else
+				{
+					array_push($this->xcss_files, $xcss_file);
+					// get rid of the media properties
+					$file = explode(':', $css_file);
+					array_push($this->css_files, trim($file[0]));
+				}
 			}
 		}
 		else

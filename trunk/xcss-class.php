@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.5.1
+ * @version    0.9.6
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -12,46 +12,49 @@
 class xCSS
 {
 	// config vars
-	private $path_css_dir;
-	private $master_file;
-	private $xcss_files;
-	private $reset_files;
-	private $hook_files;
-	private $css_files;
-	private $construct;
-	private $compress_output_to_master;
-	private $minify_output;
-	private $master_content;
-	private $debugmode;
+	public $path_css_dir;
+	public $master_file;
+	public $xcss_files;
+	public $reset_files;
+	public $hook_files;
+	public $css_files;
+	public $construct;
+	public $compress_output_to_master;
+	public $minify_output;
+	public $master_content;
+	public $debugmode;
 	
 	// hole content of the xCSS file
-	private $filecont;
+	public $filecont;
 	
 	// an array of keys(selectors) and values(propertys)
-	private $parts;
+	public $parts;
 	
 	// nodes that will be extended some level later
-	private $levelparts;
+	public $levelparts;
 
 	// final css nodes as an array
-	private $css;
+	public $css;
 	
 	// vars declared in xCSS files
-	private $xcss_vars;
+	public $xcss_vars;
 	
 	// output string for each CSS file
-	private $final_file;
+	public $final_file;
 	
 	// relevant to debugging
-	private $debug;
+	public $debug;
 	
 	public function __construct(array $cfg)
 	{
+		set_error_handler(array('xCSS', 'exception_handler'));
+		error_reporting(E_ALL);
+		
 		header('Content-type: application/javascript; charset=utf-8');
 		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
-			die("alert(\"xCSS Warning: xCSS was disabled via 'config.php'! Remove the xCSS <script> tag from your HMTL <head> tag.\");");
+			$this->exception_handler('xcss_disabled', 'xCSS was disabled via "config.php"! Remove the xCSS <script> tag from your HMTL <head> tag');
 		}
 		
 		$this->levelparts = array();
@@ -61,12 +64,31 @@ class xCSS
 		{
 			$this->xcss_files = array();
 			$this->css_files = array();
-			foreach($cfg['xCSS_files'] as $xcss_files => $css_file)
+			foreach($cfg['xCSS_files'] as $xcss_file => $css_file)
 			{
-				array_push($this->xcss_files, $xcss_files);
-				// get rid of the media properties
-				$file = explode(':', $css_file);
-				array_push($this->css_files, trim($file[0]));
+				if(strpos($xcss_file, '*') !== FALSE)
+				{
+                	$xcss_dir = glob($this->path_css_dir . $xcss_file);
+	                foreach($xcss_dir as $glob_xcss_file)
+	                {
+                        $glob_xcss_file = str_replace($this->path_css_dir, NULL, $glob_xcss_file);
+						array_push($this->xcss_files, $glob_xcss_file);
+						
+						$glob_css_file = dirname($css_file).'/'.basename(str_replace('.xcss', '.css', $glob_xcss_file));
+						// get rid of the media properties
+						$file = explode(':', $glob_css_file);
+						array_push($this->css_files, trim($file[0]));
+						$cfg['xCSS_files'][$glob_xcss_file] = $glob_css_file;
+					}
+					unset($cfg['xCSS_files'][$xcss_file]);
+				}
+				else
+				{
+					array_push($this->xcss_files, $xcss_file);
+					// get rid of the media properties
+					$file = explode(':', $css_file);
+					array_push($this->css_files, trim($file[0]));
+				}
 			}
 		}
 		else
@@ -78,7 +100,7 @@ class xCSS
 		// CSS master file
 		$this->compress_output_to_master = (isset($cfg['compress_output_to_master']) && $cfg['compress_output_to_master'] === TRUE);
 		
-		if(isset($cfg['use_master_file']) && $cfg['use_master_file'] === TRUE)
+		if($this->compress_output_to_master || (isset($cfg['use_master_file']) && $cfg['use_master_file'] === TRUE))
 		{
 			$this->master_file = isset($cfg['master_filename']) ? $cfg['master_filename'] : 'master.css';
 			$this->reset_files = isset($cfg['reset_files']) ? $cfg['reset_files'] : NULL;
@@ -87,7 +109,6 @@ class xCSS
 			if( ! $this->compress_output_to_master)
 			{
 				$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
-			
 				$this->creat_master_file($this->reset_files, $xcssf, $this->hook_files);
 			}
 		}
@@ -120,7 +141,7 @@ class xCSS
 		);
 	}
 	
-	private function creat_master_file(array $reset = array(), array $main = array(), array $hook = array())
+	public function creat_master_file(array $reset = array(), array $main = array(), array $hook = array())
 	{
 		$all_files = array_merge($reset, $main, $hook);
 		
@@ -137,8 +158,8 @@ class xCSS
 	
 	public function compile()
 	{
-		$for_c = count($this->xcss_files);
-		for($i = 0; $i < $for_c; $i++)
+		$count_xcss_files = count($this->xcss_files);
+		for($i = 0; $i < $count_xcss_files; $i++)
 		{
 			$this->parts = NULL;
 			$this->filecont = NULL;
@@ -196,19 +217,117 @@ class xCSS
 					$fname = explode(':', $fname);
 					$master_content .= $this->read_file($this->path_css_dir.$fname[0]);
 				}
+				$master_content = $this->do_math($master_content);
 				$this->creat_file($master_content, $this->master_file);
 			}
 			else
 			{
 				foreach($this->final_file as $fname => $fcont)
 				{
-					$this->creat_file($this->use_vars($fcont), $fname)."\n";
+					$fcont = $this->do_math($this->use_vars($fcont));
+					$this->creat_file($fcont, $fname)."\n";
 				}
 			}
 		}
 	}
 	
-	private function read_file($filepath)
+	public function calc_string($math)
+	{
+		$calc = create_function(NULL, 'return '.$math.';');
+		return $calc();
+	}
+	
+	public function do_math($content)
+	{
+		$units = array('px', '%', 'em', 'pt', 'cm', 'mm');
+		$units_count = count($units);
+		
+		preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result);
+		$count_results = count($result[1]);
+		for($i = 0; $i < $count_results; $i++)
+		{
+			$better_math_str = $result[1][$i];
+			if(strpos($better_math_str, '#') !== FALSE)
+			{
+		        preg_match_all('/#(\w{6}|\w{3})/', $better_math_str, $colors);
+				for($y = 0; $y < count($colors[1]); $y++)
+				{
+					$color = $colors[1][$y];
+					if(strlen($color) === 6)
+					{
+						$r = $color[0].$color[1];
+						$g = $color[2].$color[3];
+						$b = $color[4].$color[5];
+					}
+					else
+					{
+						$r = $color[0].$color[0];
+						$g = $color[1].$color[1];
+						$b = $color[2].$color[2];
+					}
+					
+					if($y === 0)
+					{
+						$rgb = array(
+							str_replace('#'.$color, '0x'.$r, $better_math_str),
+							str_replace('#'.$color, '0x'.$g, $better_math_str),
+							str_replace('#'.$color, '0x'.$b, $better_math_str),
+						);
+					}
+					else
+					{
+						$rgb = array(
+							str_replace('#'.$color, '0x'.$r, $rgb[0]),
+							str_replace('#'.$color, '0x'.$g, $rgb[1]),
+							str_replace('#'.$color, '0x'.$b, $rgb[2]),
+						);
+					}
+				}
+				$better_math_str = '#';
+				$c = $this->calc_string($rgb[0]);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, 0, STR_PAD_LEFT);
+				$c = $this->calc_string($rgb[1]);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, 0, STR_PAD_LEFT);
+				$c = $this->calc_string($rgb[2]);
+				$better_math_str .= str_pad(dechex($c<0?0:($c>255?255:$c)), 2, 0, STR_PAD_LEFT);
+			}
+			else
+			{
+				$better_math_str = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $result[1][$i]);
+				$new_unit = NULL;
+				if($result[2][$i] === ';' || $result[2][$i] === ' ')
+				{
+					$all_units_count = 0;
+					for($x = 0; $x < $units_count; $x++)
+					{
+						$this_unit_count = count(explode($units[$x], $result[1][$i]))-1;
+						if($all_units_count < $this_unit_count)
+						{
+							$new_unit = $units[$x];
+							$all_units_count = $this_unit_count;
+						}
+					}
+					if($all_units_count === 0)
+					{
+						$new_unit = 'px';
+					}
+				}
+				
+				$better_math_str = $this->calc_string($better_math_str) . $new_unit;
+			}
+			
+			$content = str_replace(array('#['.$result[1][$i].']', '['.$result[1][$i].']'), $better_math_str, $content);
+		}
+		
+		if($count_results > 0 && preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result) > 0)
+		{
+			$content = $this->do_math($content);
+		}
+		
+		return $content;
+	}
+	
+	public function read_file($filepath)
 	{
 		$filecontent = NULL;
 		
@@ -218,19 +337,20 @@ class xCSS
 		}
 		else
 		{
-			die("alert(\"xCSS Parse error: Cannot find '".$filepath."'.\");");
+			$this->exception_handler('xcss_file_does_not_exist', 'Cannot find "'.$filepath.'"');
 		}
 		
 		return $filecontent;
 	}
 	
-	private function split_content()
+	public function split_content()
 	{
 		// removes multiple line comments
 		$this->filecont = preg_replace("/\/\*(.*)?\*\//Usi", NULL, $this->filecont);
 		// removes inline comments, but not :// for http://
 		$this->filecont .= "\n";
-		$this->filecont = preg_replace("/[^:]\/\/.+?\n/", NULL, $this->filecont);
+		$this->filecont = preg_replace("/[^:]\/\/.+/", NULL, $this->filecont);
+		$this->filecont = str_replace(array('	extends', 'extends	'), array(' extends', 'extends '), $this->filecont);
 		
 		$this->filecont = $this->change_braces($this->filecont);
 		
@@ -244,7 +364,7 @@ class xCSS
 				list($keystr, $codestr) = explode('{[o#', $part);
 				// adding new line to all (,) in selectors, to be able to find them for 'extends' later
 				$keystr = str_replace(',', ",\n", trim($keystr));
-				if($keystr == 'vars')
+				if($keystr === 'vars')
 				{
 					$this->setup_vars($codestr);
 					unset($this->filecont[$i]);
@@ -257,7 +377,7 @@ class xCSS
 		}
 	}
 	
-	private function setup_vars($codestr)
+	public function setup_vars($codestr)
 	{
 		$codes = explode(';', $codestr);
 		if( ! empty($codes))
@@ -280,12 +400,12 @@ class xCSS
 		}
 	}
 	
-	private function use_vars($cont)
+	public function use_vars($cont)
 	{
 		return strtr($cont, $this->xcss_vars);
 	}
 	
-	private function parse_level()
+	public function parse_level()
 	{
 		// this will manage xCSS rule: 'extends'
 		$this->parse_extends();
@@ -294,15 +414,20 @@ class xCSS
 		$this->parse_childs();
 	}
 	
-	private function manage_global_extends()
+	public function regex_extend($keystr)
+	{
+		preg_match_all('/((\S|\s)+?) extends ((\S|\s|\n)[^,]+)/', $keystr, $result);
+		return $result;
+	}
+	
+	public function manage_global_extends()
 	{
 		// helps to find all the extenders of the global extended selector
-		
 		foreach($this->levelparts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$child = trim($result[1][0]);
 				$parent = trim($result[3][0]);
@@ -324,16 +449,16 @@ class xCSS
 		}
 	}
 	
-	private function manageMultipleExtends()
+	public function manageMultipleExtends()
 	{
-		//	To be able to manage multiple extends, you need to
-		//	destroy the actual node and creat many nodes that have
-		//	mono extend. the first one gets all the css rules
+		// To be able to manage multiple extends, you need to
+		// destroy the actual node and creat many nodes that have
+		// mono extend. the first one gets all the css rules
 		foreach($this->parts as $keystr => $codestr)
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -346,8 +471,8 @@ class xCSS
 					$with_this_key = $child.' extends '.$parents[0];
 					
 					$add_keys = array();
-					$for_c = count($parents);
-					for($i = 1; $i < $for_c; $i++)
+					$count_parents = count($parents);
+					for($i = 1; $i < $count_parents; $i++)
 					{
 						array_push($add_keys, $child.' extends '.$parents[$i]);
 					}
@@ -358,11 +483,11 @@ class xCSS
 		}
 	}
 	
-	private function add_node_at_order($kill_this, $with_this_key, $and_this_value, $additional_key = array())
+	public function add_node_at_order($kill_this, $with_this_key, $and_this_value, $additional_key = array())
 	{
 		foreach($this->parts as $keystr => $codestr)
 		{
-			if($keystr == $kill_this)
+			if($keystr === $kill_this)
 			{
 				$temp[$with_this_key] = $and_this_value;
 				
@@ -382,7 +507,7 @@ class xCSS
 		return $temp;
 	}
 	
-	private function parse_extends()
+	public function parse_extends()
 	{
 		// this will manage xCSS rule: 'extends &'
 		$this->manageMultipleExtends();
@@ -391,7 +516,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				
 				$parent = trim($result[3][0]);
 				$child = trim($result[1][0]);
@@ -409,7 +534,7 @@ class xCSS
 		{
 			if(strpos($keystr, 'extends') !== FALSE)
 			{
-				preg_match_all('/((\S|\s)+?) extends ((\S|\n)[^,]+)/', $keystr, $result);
+				$result = $this->regex_extend($keystr);
 				if(count($result[3]) > 1)
 				{
 					unset($this->parts[$keystr]);
@@ -449,7 +574,7 @@ class xCSS
 		}
 	}
 	
-	private function search_for_parent($child, $parent)
+	public function search_for_parent($child, $parent)
 	{
 		$parent_found = FALSE;
 		foreach ($this->parts as $keystr => $codestr)
@@ -457,7 +582,7 @@ class xCSS
 			$sep_keys = explode(",\n", $keystr);
 			foreach ($sep_keys as $s_key)
 			{
-				if($parent == $s_key)
+				if($parent === $s_key)
 				{
 					$this->parts = $this->add_node_at_order($keystr, $child.",\n".$keystr, $codestr);
 					
@@ -467,7 +592,7 @@ class xCSS
 						$sep_keys = explode(",\n", $keystr);
 						foreach ($sep_keys as $s_key)
 						{
-							if($parent != $s_key && strpos($s_key, $parent) !== FALSE)
+							if($parent !== $s_key && strpos($s_key, $parent) !== FALSE)
 							{
 								$childextra = str_replace($parent, $child, $s_key);
 								
@@ -486,7 +611,7 @@ class xCSS
 		return $parent_found;
 	}
 	
-	private function parse_childs()
+	public function parse_childs()
 	{
 		$still_childs_left = FALSE;
 		foreach($this->parts as $keystr => $codestr)
@@ -506,7 +631,7 @@ class xCSS
 		}
 	}
 	
-	private function manage_children($keystr, $codestr)
+	public function manage_children($keystr, $codestr)
 	{
 		$codestr = $this->change_braces($codestr);
 		
@@ -521,26 +646,26 @@ class xCSS
 				
 				if( ! empty($c_keystr))
 				{
-					$betterKey = NULL;
+					$better_key = NULL;
 					$c_keystr = str_replace(',', ",\n".$keystr, $c_keystr);
 					
 					$sep_keys = explode(",\n", $keystr);
 					foreach ($sep_keys as $s_key)
 					{
-						$betterKey .= trim($s_key).' '.$c_keystr.",\n";
+						$better_key .= trim($s_key).' '.$c_keystr.",\n";
 					}
 
-					if(strpos($betterKey, $this->construct) !== FALSE)
+					if(strpos($better_key, $this->construct) !== FALSE)
 					{
-						$betterKey = str_replace(' '.$this->construct, NULL, $betterKey);
+						$better_key = str_replace(' '.$this->construct, NULL, $better_key);
 					}
-					$this->parts[substr($betterKey, 0, -2)] = $c_codestr;
+					$this->parts[substr($better_key, 0, -2)] = $c_codestr;
 				}
 			}
 		}
 	}
 		
-	private function change_braces($str)
+	public function change_braces($str)
 	{
 		/*
 			This function was writen by Gumbo
@@ -551,8 +676,8 @@ class xCSS
 		*/
 		$buffer = NULL;
 		$depth = 0;
-		$for_c = strlen($str);
-		for($i = 0; $i < $for_c; $i++)
+		$strlen_str = strlen($str);
+		for($i = 0; $i < $strlen_str; $i++)
 		{
 			$char = $str[$i];
 			switch ($char)
@@ -560,11 +685,11 @@ class xCSS
 				case '{':
 					$depth++;
 					$buffer .= ($depth === 1) ? '{[o#' : $char;
-					break;
+				break;
 				case '}':
 					$depth--;
 					$buffer .= ($depth === 0) ? '#c]}' : $char;
-					break;
+				break;
 				default:
 					$buffer .= $char;
 			}
@@ -572,7 +697,7 @@ class xCSS
 		return $buffer;
 	}
 	
-	private function manage_order(array $parts)
+	public function manage_order(array $parts)
 	{
 		/*
 			this function brings the CSS nodes in the right order
@@ -595,7 +720,7 @@ class xCSS
 		return $sorted;
 	}
 	
-	private function final_parse($filename)
+	public function final_parse($filename)
 	{
 		foreach($this->parts as $keystr => $codestr)
 		{
@@ -628,7 +753,7 @@ class xCSS
 		$this->final_file[$filename] = $this->creat_css();
 	}
 	
-	private function creat_css()
+	public function creat_css()
 	{
 		$result = NULL;
 		if(is_array($this->css))
@@ -648,7 +773,7 @@ class xCSS
 		return $result;
 	}
 	
-	private function creat_file($content, $filename)
+	public function creat_file($content, $filename)
 	{
 		if($this->debugmode)
 		{
@@ -658,20 +783,73 @@ class xCSS
 		if($this->minify_output)
 		{
 			// let's remove big spaces, tabs and newlines
-			$content = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   ', '    '), NULL, $content);
+			$content = str_replace(array("\n ", "\n", "\t", '  ', '   '), NULL, $content);
+			$content = str_replace(array(' {', ';}', ': '), array('{', '}', ':'), $content);
 		}
 		
-		$filepath = $this->path_css_dir.$filename;
+		$filepath = $this->path_css_dir . $filename;
 		
-		if( ! is_writable($filepath))
+		if( ! file_exists($filepath))
 		{
-			die("alert(\"xCSS Parse error: Cannot write to the output file '".$filepath."'.\");");
+			if(is_dir(dirname($filepath)))
+			{
+				if( ! fopen($filepath, 'w'))
+				{
+					$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check CHMOD permissions"');
+				}
+			}
+			else
+			{
+				$this->exception_handler('css_dir_unwritable', 'no such directory "'.dirname($filepath).'"');
+			}
+		}
+		else if( ! is_writable($filepath))
+		{
+			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check CHMOD permissions"');
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
 	}
 	
-	private function microtime_float()
+	public function exception_handler($exception, $message = NULL, $file = NULL, $line = NULL)
+	{
+		if($this->debugmode)
+		{
+			echo "// Error: '$exception' in file '$file' on line: '$line'\n//\t- $message\n\n";
+		}
+		
+		if(strpos($message, 'create_function') !== FALSE)
+		{
+			$exception = 'xcss_math_error';
+		}
+		
+		switch ($exception)
+		{
+			case 'xcss_math_error':
+				echo 'alert("xCSS Parse error: unable to solve the math operation");'."\n";
+				exit(1);
+			break;
+			case 'xcss_file_does_not_exist':
+			case 'xcss_disabled':
+			case 'css_file_unwritable':
+			case 'css_dir_unwritable':
+				echo 'alert("xCSS Parse error: '.addslashes($message).'");'."\n";
+				exit(1);
+			break;
+			case 'xcss_disabled':
+				echo '// '.addslashes($message)."\n";
+				exit(1);
+			break;
+			
+			default:
+				echo 'alert("xCSS Parse error: check the syntax of your xCSS files");'."\n";
+				exit(1);
+			break;
+		}
+		return TRUE;
+	}
+	
+	public function microtime_float()
 	{
 	    list($usec, $sec) = explode(' ', microtime());
 	    return ((float)$usec + (float)$sec);
