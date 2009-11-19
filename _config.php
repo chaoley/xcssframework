@@ -3,17 +3,17 @@
  * xCSS config
  */
 
-$config['path_to_css_dir'] = '../../../';		//	default: '../'
+$config['path_to_css_dir'] = '../../../';				//	default: '../'
 
 $config['xCSS_files'] = array
 (
-//	'960.xcss'						=> '960.css',
-//	'stresstest_across_files.xcss'	=> 'stresstest_across_files.css',
-	'quickcheck.xcss'				=> 'quickcheck.css',
+	'960.xcss'						=> '960.css',
+	'stresstest_across_files.xcss'	=> 'stresstest_across_files.css',
+	'foo/*'	 => 'bar/*',
 );
 
 $config['use_master_file'] = true;				//	default: 'true'
-$config['compress_output_to_master'] = true;	//	default: 'false'
+$config['compress_output_to_master'] = false;	//	default: 'false'
 $config['master_filename'] = 'master.css';		//	default: 'master.css'
 
 $config['reset_files'] = array
