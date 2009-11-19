@@ -1,5 +1,5 @@
 Name:		xCSS
-Version:	v0.9.6
+Version:	v0.9.7
 License:	see LICENSE
 Author:		Anton Pawlik
 Year:		2009

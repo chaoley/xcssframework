@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.6
+ * @version    0.9.7
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -30,7 +30,7 @@ class xCSS
 	// an array of keys(selectors) and values(propertys)
 	public $parts;
 	
-	// nodes that will be extended some level later
+	// nodes that will be extended some levels later
 	public $levelparts;
 	
 	// final css nodes as an array
@@ -50,7 +50,10 @@ class xCSS
 		set_error_handler(array('xCSS', 'exception_handler'));
 		error_reporting(E_ALL);
 		
-		header('Content-type: application/javascript; charset=utf-8');
+		if( ! (isset($cfg['compile_string']) && $cfg['compile_string'] === TRUE))
+		{
+			header('Content-type: application/javascript; charset=utf-8');
+		}
 		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
@@ -109,7 +112,7 @@ class xCSS
 			if( ! $this->compress_output_to_master)
 			{
 				$xcssf = isset($cfg['xCSS_files']) ? $cfg['xCSS_files'] : NULL;
-				$this->creat_master_file($this->reset_files, $xcssf, $this->hook_files);
+				$this->create_master_file($this->reset_files, $xcssf, $this->hook_files);
 			}
 		}
 		
@@ -141,7 +144,7 @@ class xCSS
 		);
 	}
 	
-	public function creat_master_file(array $reset = array(), array $main = array(), array $hook = array())
+	public function create_master_file(array $reset = array(), array $main = array(), array $hook = array())
 	{
 		$all_files = array_merge($reset, $main, $hook);
 		
@@ -153,82 +156,106 @@ class xCSS
 			$master_file_content .= '@import url("'.trim($file[0]).'")'.$props.';'."\n";
 		}
 		
-		$this->creat_file($master_file_content, $this->master_file);
+		$this->create_file($master_file_content, $this->master_file);
 	}
 	
-	public function compile()
+	public function compile($input_xcss = FALSE)
 	{
-		$count_xcss_files = count($this->xcss_files);
-		for($i = 0; $i < $count_xcss_files; $i++)
+		if($input_xcss === FALSE)
 		{
-			$this->parts = NULL;
-			$this->filecont = NULL;
-			$this->css = NULL;
-			
-			$filename = $this->path_css_dir.$this->xcss_files[$i];
-			$this->filecont = $this->read_file($filename);
-			
-			foreach($this->xcss_vars as $var => $unsafe_char)
+			$count_xcss_files = count($this->xcss_files);
+			for($i = 0; $i < $count_xcss_files; $i++)
 			{
-				$masked_unsafe_char = str_replace(array('*', '/'), array('\*', '\/'), $unsafe_char);
-				$patterns[] = '/content(.*:.*(\'|").*)('.$masked_unsafe_char.')(.*(\'|"))/';
-				$replacements[] = 'content$1'.$var.'$4';
-			}
-			
-			$this->filecont = preg_replace($patterns, $replacements, $this->filecont);
-			
-			if(strlen($this->filecont) > 1)
-			{
-				$this->split_content();
+				$this->parts = NULL;
+				$this->filecont = NULL;
+				$this->css = NULL;
 				
-				if( ! empty($this->parts))
+				$filename = $this->path_css_dir.$this->xcss_files[$i];
+				$this->filecont = $this->read_file($filename);
+				
+				if($this->parse_xcss_string())
 				{
-					$this->parse_level();
-					
-					$this->parts = $this->manage_order($this->parts);
-					
-					if( ! empty($this->levelparts))
-					{
-						$this->manage_global_extends();
-					}
-					
 					$this->final_parse($this->css_files[$i]);
 				}
 			}
+			
+			if( ! empty($this->final_file))
+			{
+				if($this->compress_output_to_master)
+				{
+					$master_content = NULL;
+					foreach($this->reset_files as $fname)
+					{
+						$fname = explode(':', $fname);
+						$master_content .= $this->read_file($this->path_css_dir.$fname[0])."\n";
+					}
+					rsort($this->final_file);
+					foreach($this->final_file as $fcont)
+					{
+						$master_content .= $this->use_vars($fcont);
+					}
+					foreach($this->hook_files as $fname)
+					{
+						$fname = explode(':', $fname);
+						$master_content .= $this->read_file($this->path_css_dir.$fname[0]);
+					}
+					$master_content = $this->do_math($master_content);
+					$this->create_file($master_content, $this->master_file);
+				}
+				else
+				{
+					foreach($this->final_file as $fname => $fcont)
+					{
+						$fcont = $this->do_math($this->use_vars($fcont));
+						$this->create_file($fcont, $fname);
+					}
+				}
+			}
+		}
+		else
+		{
+			$this->filecont = $input_xcss;
+			if($this->parse_xcss_string())
+			{
+				$this->final_parse('string');
+				$fcont = $this->use_vars($this->final_file['string']);
+				$fcont = $this->do_math($fcont);
+				return $this->create_file($fcont, 'string');
+			}
+		}
+	}
+	
+	public function parse_xcss_string()
+	{		
+		foreach($this->xcss_vars as $var => $unsafe_char)
+		{
+			$masked_unsafe_char = str_replace(array('*', '/'), array('\*', '\/'), $unsafe_char);
+			$patterns[] = '/content(.*:.*(\'|").*)('.$masked_unsafe_char.')(.*(\'|"))/';
+			$replacements[] = 'content$1'.$var.'$4';
 		}
 		
-		if( ! empty($this->final_file))
+		$this->filecont = preg_replace($patterns, $replacements, $this->filecont);
+		
+		if(strlen($this->filecont) > 1)
 		{
-			if($this->compress_output_to_master)
+			$this->split_content();
+			
+			if( ! empty($this->parts))
 			{
-				$master_content = NULL;
-				foreach($this->reset_files as $fname)
+				$this->parse_level();
+				
+				$this->parts = $this->manage_order($this->parts);
+				
+				if( ! empty($this->levelparts))
 				{
-					$fname = explode(':', $fname);
-					$master_content .= $this->read_file($this->path_css_dir.$fname[0])."\n";
+					$this->manage_global_extends();
 				}
-				rsort($this->final_file);
-				foreach($this->final_file as $fcont)
-				{
-					$master_content .= $this->use_vars($fcont);
-				}
-				foreach($this->hook_files as $fname)
-				{
-					$fname = explode(':', $fname);
-					$master_content .= $this->read_file($this->path_css_dir.$fname[0]);
-				}
-				$master_content = $this->do_math($master_content);
-				$this->creat_file($master_content, $this->master_file);
-			}
-			else
-			{
-				foreach($this->final_file as $fname => $fcont)
-				{
-					$fcont = $this->do_math($this->use_vars($fcont));
-					$this->creat_file($fcont, $fname)."\n";
-				}
+				
+				return TRUE;
 			}
 		}
+		
+		return FALSE;
 	}
 	
 	public function calc_string($math)
@@ -347,7 +374,7 @@ class xCSS
 	{
 		// removes multiple line comments
 		$this->filecont = preg_replace("/\/\*(.*)?\*\//Usi", NULL, $this->filecont);
-		// removes inline comments, but not :// for http://
+		// removes inline comments, but not :// (protocol)
 		$this->filecont .= "\n";
 		$this->filecont = preg_replace("/[^:]\/\/.+/", NULL, $this->filecont);
 		$this->filecont = str_replace(array('	extends', 'extends	'), array(' extends', 'extends '), $this->filecont);
@@ -411,7 +438,7 @@ class xCSS
 		$this->parse_extends();
 
 		// this will manage xCSS rule: child objects inside of a node
-		$this->parse_childs();
+		$this->parse_children();
 	}
 	
 	public function regex_extend($keystr)
@@ -611,9 +638,9 @@ class xCSS
 		return $parent_found;
 	}
 	
-	public function parse_childs()
+	public function parse_children()
 	{
-		$still_childs_left = FALSE;
+		$children_left = FALSE;
 		foreach($this->parts as $keystr => $codestr)
 		{
 			if(strpos($codestr, '{') !== FALSE)
@@ -622,10 +649,10 @@ class xCSS
 				unset($this->parts[$keystr]);
 				unset($this->levelparts[$keystr]);
 				$this->manage_children($keystr, $this->construct."{}\n".$codestr);
-				$still_childs_left = TRUE; // maybe
+				$children_left = TRUE; // maybe
 			}
 		}
-		if($still_childs_left)
+		if($children_left)
 		{
 			$this->parse_level();
 		}
@@ -664,7 +691,7 @@ class xCSS
 			}
 		}
 	}
-		
+	
 	public function change_braces($str)
 	{
 		/*
@@ -750,10 +777,10 @@ class xCSS
 				}
 			}
 		}
-		$this->final_file[$filename] = $this->creat_css();
+		$this->final_file[$filename] = $this->create_css();
 	}
 	
-	public function creat_css()
+	public function create_css()
 	{
 		$result = NULL;
 		if(is_array($this->css))
@@ -773,7 +800,7 @@ class xCSS
 		return $result;
 	}
 	
-	public function creat_file($content, $filename)
+	public function create_file($content, $filename)
 	{
 		if($this->debugmode)
 		{
@@ -787,15 +814,20 @@ class xCSS
 			$content = str_replace(array(' {', ';}', ': '), array('{', '}', ':'), $content);
 		}
 		
-		$filepath = $this->path_css_dir . $filename;
+		if($filename === 'string')
+		{
+			return $content;
+		}
 		
+		$filepath = $this->path_css_dir . $filename;
+			
 		if( ! file_exists($filepath))
 		{
 			if(is_dir(dirname($filepath)))
 			{
 				if( ! fopen($filepath, 'w'))
 				{
-					$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check CHMOD permissions"');
+					$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'", check CHMOD permissions');
 				}
 			}
 			else
@@ -805,7 +837,7 @@ class xCSS
 		}
 		else if( ! is_writable($filepath))
 		{
-			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.', check CHMOD permissions"');
+			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'", check CHMOD permissions');
 		}
 		
 		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
@@ -837,10 +869,9 @@ class xCSS
 				exit(1);
 			break;
 			case 'xcss_disabled':
-				echo '// '.addslashes($message)."\n";
+				echo '// '.$message."\n";
 				exit(1);
 			break;
-			
 			default:
 				echo 'alert("xCSS Parse error: check the syntax of your xCSS files");'."\n";
 				exit(1);
@@ -852,7 +883,7 @@ class xCSS
 	public function microtime_float()
 	{
 		list($usec, $sec) = explode(' ', microtime());
-		return ((float)$usec + (float)$sec);
+		return ((float) $usec + (float) $sec);
 	}
 	
 	public function __destruct()
