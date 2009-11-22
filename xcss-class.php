@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.7
+ * @version    0.9.8
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -463,7 +463,7 @@ class xCSS
 				{
 					// to be sure we get all the children we need to find the parent selector
 					// this must be the one that has no , after his name
-					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.',') !== FALSE))
+					if(strpos($p_keystr, ",\n".$child) !== FALSE && strpos($p_keystr, $child.',') === FALSE)
 					{
 						$p_keys = explode(",\n", $p_keystr);
 						foreach($p_keys as $p_key)
@@ -623,7 +623,7 @@ class xCSS
 							{
 								$childextra = str_replace($parent, $child, $s_key);
 								
-								if( ! strpos($childextra, 'extends') !== FALSE)
+								if(strpos($childextra, 'extends') === FALSE)
 								{
 									// get rid off not extended parent node
 									$this->parts = $this->add_node_at_order($keystr, $childextra.",\n".$keystr, $codestr);
