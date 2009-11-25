@@ -49,8 +49,6 @@ class xCSS
 	{
 		set_error_handler(array('xCSS', 'exception_handler'));
 		
-		header('Content-type: application/javascript; charset=utf-8');
-		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
 			$this->exception_handler('xcss_disabled', 'xCSS was disabled via "config.php"! Remove the xCSS <script> tag from your HMTL <head> tag');
@@ -672,11 +670,11 @@ class xCSS
 					
 					$better_strkey = explode(',', $keystr);
 					$c_keystr = explode(',', $c_keystr);
-					foreach($c_keystr as $s_keystr)
+					foreach($c_keystr as $child_coma_keystr)
 					{
-						foreach($better_strkey as $x_keystr)
+						foreach($better_strkey as $parent_coma_keystr)
 						{
-							$better_key .= trim($x_keystr).' '.trim($s_keystr).",\n";
+							$better_key .= trim($parent_coma_keystr).' '.trim($child_coma_keystr).",\n";
 						}
 					}
 					
