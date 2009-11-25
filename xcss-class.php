@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.7
+ * @version    0.9.8
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -48,12 +48,6 @@ class xCSS
 	public function __construct(array $cfg)
 	{
 		set_error_handler(array('xCSS', 'exception_handler'));
-		error_reporting(E_ALL);
-		
-		if( ! (isset($cfg['compile_string']) && $cfg['compile_string'] === TRUE))
-		{
-			header('Content-type: application/javascript; charset=utf-8');
-		}
 		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
@@ -463,7 +457,7 @@ class xCSS
 				{
 					// to be sure we get all the children we need to find the parent selector
 					// this must be the one that has no , after his name
-					if(strpos($p_keystr, ",\n".$child) !== FALSE && ( ! strpos($p_keystr, $child.',') !== FALSE))
+					if(strpos($p_keystr, ",\n".$child) !== FALSE && strpos($p_keystr, $child.',') === FALSE)
 					{
 						$p_keys = explode(",\n", $p_keystr);
 						foreach($p_keys as $p_key)
@@ -577,9 +571,9 @@ class xCSS
 				// TRUE means that the parent node was in the same file
 				if($this->search_for_parent($child, $parent))
 				{
-					// if not empty, creat own node with extended code
+					// if not empty, create own node with extended code
 					$codestr = trim($codestr);
-					if( ! empty($codestr))
+					if($codestr !== '')
 					{
 						$this->parts[$child] = $codestr;
 					}
@@ -612,7 +606,6 @@ class xCSS
 				if($parent === $s_key)
 				{
 					$this->parts = $this->add_node_at_order($keystr, $child.",\n".$keystr, $codestr);
-					
 					// finds all the parent selectors with another bind selectors behind
 					foreach ($this->parts as $keystr => $codestr)
 					{
@@ -623,7 +616,7 @@ class xCSS
 							{
 								$childextra = str_replace($parent, $child, $s_key);
 								
-								if( ! strpos($childextra, 'extends') !== FALSE)
+								if(strpos($childextra, 'extends') === FALSE)
 								{
 									// get rid off not extended parent node
 									$this->parts = $this->add_node_at_order($keystr, $childextra.",\n".$keystr, $codestr);
@@ -666,20 +659,23 @@ class xCSS
 		foreach ($c_parts as $c_part)
 		{
 			$c_part = trim($c_part);
-			if( ! empty($c_part))
+			if($c_part !== '')
 			{
 				list($c_keystr, $c_codestr) = explode('{[o#', $c_part);
 				$c_keystr = trim($c_keystr);
 				
-				if( ! empty($c_keystr))
+				if($c_keystr !== '')
 				{
 					$better_key = NULL;
-					$c_keystr = str_replace(',', ",\n".$keystr, $c_keystr);
 					
-					$sep_keys = explode(",\n", $keystr);
-					foreach ($sep_keys as $s_key)
+					$better_strkey = explode(',', $keystr);
+					$c_keystr = explode(',', $c_keystr);
+					foreach($c_keystr as $child_coma_keystr)
 					{
-						$better_key .= trim($s_key).' '.$c_keystr.",\n";
+						foreach($better_strkey as $parent_coma_keystr)
+						{
+							$better_key .= trim($parent_coma_keystr).' '.trim($child_coma_keystr).",\n";
+						}
 					}
 					
 					if(strpos($better_key, $this->construct) !== FALSE)
@@ -800,7 +796,7 @@ class xCSS
 		return $result;
 	}
 	
-	public function create_file($content, $filename)
+	public function create_file($content, $filename, $filepath = NULL)
 	{
 		if($this->debugmode)
 		{
@@ -819,7 +815,7 @@ class xCSS
 			return $content;
 		}
 		
-		$filepath = $this->path_css_dir . $filename;
+		$filepath = ($filepath === NULL) ? $this->path_css_dir.$filename : $filepath.$filename;
 			
 		if( ! file_exists($filepath))
 		{
@@ -840,7 +836,7 @@ class xCSS
 			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'", check CHMOD permissions');
 		}
 		
-		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
+		file_put_contents($filepath, utf8_decode($content));
 	}
 	
 	public function exception_handler($exception, $message = NULL, $file = NULL, $line = NULL)
@@ -859,25 +855,20 @@ class xCSS
 		{
 			case 'xcss_math_error':
 				echo 'alert("xCSS Parse error: unable to solve the math operation");'."\n";
-				exit(1);
 			break;
 			case 'xcss_file_does_not_exist':
 			case 'xcss_disabled':
 			case 'css_file_unwritable':
 			case 'css_dir_unwritable':
 				echo 'alert("xCSS Parse error: '.addslashes($message).'");'."\n";
-				exit(1);
 			break;
 			case 'xcss_disabled':
 				echo '// '.$message."\n";
-				exit(1);
 			break;
 			default:
 				echo 'alert("xCSS Parse error: check the syntax of your xCSS files");'."\n";
-				exit(1);
 			break;
 		}
-		return TRUE;
 	}
 	
 	public function microtime_float()
