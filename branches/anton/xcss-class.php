@@ -48,12 +48,8 @@ class xCSS
 	public function __construct(array $cfg)
 	{
 		set_error_handler(array('xCSS', 'exception_handler'));
-		error_reporting(E_ALL);
 		
-		if( ! (isset($cfg['compile_string']) && $cfg['compile_string'] === TRUE))
-		{
-			header('Content-type: application/javascript; charset=utf-8');
-		}
+		header('Content-type: application/javascript; charset=utf-8');
 		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
@@ -577,7 +573,7 @@ class xCSS
 				// TRUE means that the parent node was in the same file
 				if($this->search_for_parent($child, $parent))
 				{
-					// if not empty, creat own node with extended code
+					// if not empty, create own node with extended code
 					$codestr = trim($codestr);
 					if( ! empty($codestr))
 					{
@@ -800,7 +796,7 @@ class xCSS
 		return $result;
 	}
 	
-	public function create_file($content, $filename)
+	public function create_file($content, $filename, $filepath = NULL)
 	{
 		if($this->debugmode)
 		{
@@ -819,7 +815,7 @@ class xCSS
 			return $content;
 		}
 		
-		$filepath = $this->path_css_dir . $filename;
+		$filepath = ($filepath === NULL) ? $this->path_css_dir.$filename : $filepath.$filename;
 			
 		if( ! file_exists($filepath))
 		{
@@ -840,7 +836,7 @@ class xCSS
 			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'", check CHMOD permissions');
 		}
 		
-		file_put_contents($filepath, pack("CCC",0xef,0xbb,0xbf).utf8_decode($content));
+		file_put_contents($filepath, utf8_decode($content));
 	}
 	
 	public function exception_handler($exception, $message = NULL, $file = NULL, $line = NULL)
