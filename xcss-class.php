@@ -575,7 +575,7 @@ class xCSS
 				{
 					// if not empty, create own node with extended code
 					$codestr = trim($codestr);
-					if( ! empty($codestr))
+					if($codestr !== '')
 					{
 						$this->parts[$child] = $codestr;
 					}
@@ -608,7 +608,6 @@ class xCSS
 				if($parent === $s_key)
 				{
 					$this->parts = $this->add_node_at_order($keystr, $child.",\n".$keystr, $codestr);
-					
 					// finds all the parent selectors with another bind selectors behind
 					foreach ($this->parts as $keystr => $codestr)
 					{
@@ -662,20 +661,23 @@ class xCSS
 		foreach ($c_parts as $c_part)
 		{
 			$c_part = trim($c_part);
-			if( ! empty($c_part))
+			if($c_part !== '')
 			{
 				list($c_keystr, $c_codestr) = explode('{[o#', $c_part);
 				$c_keystr = trim($c_keystr);
 				
-				if( ! empty($c_keystr))
+				if($c_keystr !== '')
 				{
 					$better_key = NULL;
-					$c_keystr = str_replace(',', ",\n".$keystr, $c_keystr);
 					
-					$sep_keys = explode(",\n", $keystr);
-					foreach ($sep_keys as $s_key)
+					$better_strkey = explode(',', $keystr);
+					$c_keystr = explode(',', $c_keystr);
+					foreach($c_keystr as $s_keystr)
 					{
-						$better_key .= trim($s_key).' '.$c_keystr.",\n";
+						foreach($better_strkey as $x_keystr)
+						{
+							$better_key .= trim($x_keystr).' '.trim($s_keystr).",\n";
+						}
 					}
 					
 					if(strpos($better_key, $this->construct) !== FALSE)
@@ -855,25 +857,20 @@ class xCSS
 		{
 			case 'xcss_math_error':
 				echo 'alert("xCSS Parse error: unable to solve the math operation");'."\n";
-				exit(1);
 			break;
 			case 'xcss_file_does_not_exist':
 			case 'xcss_disabled':
 			case 'css_file_unwritable':
 			case 'css_dir_unwritable':
 				echo 'alert("xCSS Parse error: '.addslashes($message).'");'."\n";
-				exit(1);
 			break;
 			case 'xcss_disabled':
 				echo '// '.$message."\n";
-				exit(1);
 			break;
 			default:
 				echo 'alert("xCSS Parse error: check the syntax of your xCSS files");'."\n";
-				exit(1);
 			break;
 		}
-		return TRUE;
 	}
 	
 	public function microtime_float()

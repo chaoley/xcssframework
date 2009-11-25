@@ -37,8 +37,9 @@ if( ! file_exists($update_file) || file_get_contents($update_file) !== $xcss_tim
 	
 	$xCSS = new xCSS($config);
 	
-	echo '<script type="text/javascript">'.
-		$xCSS->compile().
-		$xCSS->create_file($xcss_time, $update_file, './').
-	'</script>';
+	echo '<script type="text/javascript">'."\n";
+	$xCSS->compile();
+	$xCSS->create_file($xcss_time, $update_file, './');
+	unset($xCSS);
+	echo '</script>'."\n";
 }
