@@ -8,9 +8,9 @@
  */
 
 error_reporting(E_ALL);
-define('XCSSCLASS', '../css/xCSS/xcss-class.php');
+define('XCSSCLASS', 'xcss-class.php');
 include XCSSCLASS;
-define('XCSSCONFIG', '../css/xCSS/config.php');
+define('XCSSCONFIG', 'config.php');
 include XCSSCONFIG;
 
 class xCSS_compiler extends xCSS
@@ -52,9 +52,9 @@ class xCSS_compiler extends xCSS
 		}
 		return TRUE;
 	}
-	
-	public function __destruct() {}
 }
+
+$config['debugmode'] = FALSE;
 
 $xCSS_compiler = new xCSS_compiler($config);
 
