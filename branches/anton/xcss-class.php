@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    0.9.8
+ * @version    0.9.9
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -796,7 +796,7 @@ class xCSS
 		return $result;
 	}
 	
-	public function create_file($content, $filename, $filepath = NULL)
+	public function create_file($content, $filename)
 	{
 		if($this->debugmode)
 		{
@@ -815,7 +815,7 @@ class xCSS
 			return $content;
 		}
 		
-		$filepath = ($filepath === NULL) ? $this->path_css_dir.$filename : $filepath.$filename;
+		$filepath = $this->path_css_dir.$filename;
 			
 		if( ! file_exists($filepath))
 		{
