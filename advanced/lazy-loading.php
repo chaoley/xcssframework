@@ -13,28 +13,34 @@ include XCSSCONFIG;
 
 $config['path_to_css_dir'] = '../'.$config['path_to_css_dir'];
 
-$update_file = 'last-xcss-update.txt';
-
-$xcss_mod_time = array();
-foreach($config['xCSS_files'] as $xcss_file => $css_file)
+function check_file($file_array, $file_path)
 {
-	if(strpos($xcss_file, '*') !== FALSE)
+	foreach($file_array as $xcss_file => $css_file)
 	{
-		$xcss_dir = glob($config['path_to_css_dir'].$xcss_file);
-		foreach($xcss_dir as $glob_xcss_file)
+		if(strpos($xcss_file, '*') !== FALSE)
 		{
-			$xcss_mod_time[$glob_xcss_file] = filemtime($glob_xcss_file);
+			$xcss_dir = glob($file_path.$xcss_file);
+			foreach($xcss_dir as $glob_xcss_file)
+			{
+				$glob_css_file = dirname($css_file).'/'.basename(str_replace('.xcss', '.css', $glob_xcss_file));
+				if(filemtime($glob_xcss_file) > filemtime($glob_css_file))
+				{
+					return TRUE;
+				}
+			}
+		}
+		else
+		{
+			if(filemtime($file_path.$xcss_file) > filemtime($file_path.$css_file))
+			{
+				return TRUE;
+			}
 		}
 	}
-	else
-	{
-		$xcss_mod_time[$xcss_file] = filemtime($config['path_to_css_dir'].$xcss_file);
-	}
+	return FALSE;
 }
 
-$xcss_time = serialize($xcss_mod_time);
-
-if( ! file_exists($update_file) || file_get_contents($update_file) !== $xcss_time)
+if(check_file($config['xCSS_files'], $config['path_to_css_dir']))
 {
 	include XCSSCLASS;
 	
@@ -42,7 +48,6 @@ if( ! file_exists($update_file) || file_get_contents($update_file) !== $xcss_tim
 	
 	echo '<script type="text/javascript">'."\n";
 	$xCSS->compile();
-	$xCSS->create_file($xcss_time, $update_file, './');
 	unset($xCSS);
 	echo '</script>'."\n";
 }
